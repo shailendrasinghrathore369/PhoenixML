@@ -4,6 +4,7 @@ from fastapi import FastAPI, APIRouter
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core.exceptions import register_exception_handlers
+from app.auth.router import router as auth_router
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -30,6 +31,9 @@ def create_app() -> FastAPI:
         return {"status": "ok", "project": settings.PROJECT_NAME}
         
     app.include_router(api_router, prefix="/api")
+    
+    # Register auth router
+    app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
     
     return app
 

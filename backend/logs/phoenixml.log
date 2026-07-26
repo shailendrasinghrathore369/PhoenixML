@@ -1,0 +1,51 @@
+2026-07-26 22:12:03,783 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-26 22:26:52,552 - app.main - INFO - Shutting down PhoenixML backend...
+2026-07-26 22:31:50,808 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-07-26 22:31:50,818 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-26 22:31:51,025 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\Shailendra Singh\Videos\Study Material\PhoenixML\backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-07-26 22:31:51,030 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '<unknown>'
+2026-07-26 22:31:51,031 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-07-26 22:31:52,531 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\Shailendra Singh\Videos\Study Material\PhoenixML\backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-07-26 22:31:52,532 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '<unknown>'
+2026-07-26 22:31:53,532 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\Shailendra Singh\Videos\Study Material\PhoenixML\backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-07-26 22:31:53,533 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '<unknown>'
+2026-07-26 22:31:54,803 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-26 22:31:54,821 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-26 22:31:54,823 - app.main - INFO - Shutting down PhoenixML backend...
+2026-07-26 22:36:43,525 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-26 22:36:43,714 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-07-26 22:36:43,722 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-26 22:36:43,898 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-07-26 22:36:43,899 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-07-26 22:36:44,322 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-07-26 22:36:44,748 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-07-26 22:36:44,753 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-07-26 22:36:45,125 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-07-26 22:36:45,132 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-07-26 22:36:45,152 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-26 22:36:45,162 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-26 22:36:45,164 - app.main - INFO - Shutting down PhoenixML backend...
+2026-07-26 22:40:58,253 - app.main - INFO - Shutting down PhoenixML backend...
+2026-07-26 22:42:27,548 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-26 23:02:51,101 - app.main - INFO - Shutting down PhoenixML backend...
+2026-07-26 23:03:03,068 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-26 23:05:04,564 - app.main - INFO - Shutting down PhoenixML backend...
+2026-07-26 23:06:38,921 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-26 23:07:10,926 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-07-26 23:07:10,928 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-07-26 23:09:39,665 - app.main - INFO - Shutting down PhoenixML backend...
