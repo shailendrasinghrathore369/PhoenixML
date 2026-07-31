@@ -1,10 +1,16 @@
 # Software Requirements Specification (SRS)
 
-**Project:** PhoenixML
+# Project
 
-**Version:** 1.0
+**PhoenixML**
 
-**Prepared By:** Shailendra Singh Rathore
+# Version
+
+2.0
+
+# Prepared By
+
+Shailendra Singh Rathore
 
 ---
 
@@ -12,51 +18,207 @@
 
 ## 1.1 Purpose
 
-This Software Requirements Specification (SRS) defines the functional and non-functional requirements of **PhoenixML**, an explainable decision-support platform for production Machine Learning (ML) maintenance.
+This Software Requirements Specification (SRS) defines the functional and non-functional requirements for **PhoenixML**, an intelligent MLOps decision-support framework developed for maintaining deployed Spam Email Detection models.
 
-PhoenixML assists ML engineers by monitoring deployed machine learning models, assessing model health, and recommending maintenance actions through the Adaptive Intelligent Model Decision (AIMD) Framework.
+Machine learning models deployed in production environments gradually lose their effectiveness as real-world data evolves. In spam email detection, attackers continuously modify email structures, vocabulary, formatting, and phishing techniques to bypass existing classifiers. These changes introduce **data drift** and **concept drift**, causing a gradual decline in model performance.
 
----
+Traditional MLOps solutions primarily focus on monitoring deployed models and generating alerts when performance degrades. However, they provide limited guidance regarding the most appropriate maintenance strategy.
 
-## 1.2 Scope
+PhoenixML addresses this limitation by continuously monitoring the deployed spam email detection model, analyzing its operational health, detecting performance degradation, identifying drift, explaining the underlying causes, and recommending intelligent maintenance strategies using the **Adaptive Intelligent Model Decision (AIMD)** engine.
 
-PhoenixML provides:
+Unlike conventional monitoring systems, PhoenixML acts as an intelligent decision-support system that assists ML engineers in determining when to retrain, rollback, collect additional data, increase monitoring, or perform human review.
 
-- User authentication
-- Machine learning model management
-- Production model monitoring
-- Health score calculation
-- Drift analysis
-- Explainable maintenance recommendations
-- Decision history
-- Dashboard visualization
-
-PhoenixML is designed to complement existing MLOps platforms rather than replace them.
+The first version of PhoenixML focuses on intelligent maintenance recommendations, while future versions extend the framework toward semi-automated maintenance pipelines with human-in-the-loop deployment approval.
 
 ---
 
-## 1.3 Intended Audience
+## 1.2 Project Vision
+
+PhoenixML is **not a spam email classifier**.
+
+Instead, it is an intelligent maintenance framework built around a deployed spam email classification model.
+
+The objective of PhoenixML is to ensure that the deployed spam detection model remains reliable throughout its operational lifecycle by continuously monitoring its health, explaining performance degradation, and recommending adaptive maintenance strategies.
+
+Spam Email Detection is used as the implementation domain because it naturally experiences continuous concept drift caused by evolving spam techniques, making it an ideal environment for intelligent model maintenance research.
+
+---
+
+## 1.3 Scope
+
+PhoenixML provides an intelligent platform capable of:
+
+- Secure user authentication and authorization.
+- Spam email model registration.
+- Monitoring deployed spam email detection models.
+- Collecting prediction statistics.
+- Measuring model performance.
+- Detecting data drift.
+- Detecting concept drift.
+- Monitoring prediction confidence.
+- Calculating overall model health.
+- Explaining model degradation.
+- Generating maintenance recommendations using AIMD.
+- Recording recommendation history.
+- Visualizing model health through an interactive dashboard.
+- Supporting future semi-automated maintenance workflows.
+
+The system is designed for research and educational purposes while following industrial MLOps principles.
+
+---
+
+## 1.4 Research Motivation
+
+Machine Learning models are generally developed using historical datasets.
+
+Once deployed, they encounter continuously changing real-world environments.
+
+For spam email detection, attackers constantly invent new techniques such as:
+
+- Obfuscated words
+- Character replacement
+- Unicode manipulation
+- AI-generated phishing emails
+- Image-based spam
+- URL obfuscation
+- Social engineering techniques
+
+These changes gradually reduce the effectiveness of the deployed classifier.
+
+Most existing monitoring platforms only report that the model's performance has declined.
+
+They rarely answer questions such as:
+
+- Why did the model fail?
+- Is retraining actually necessary?
+- Would collecting more data solve the problem?
+- Should rollback be preferred?
+- Is the degradation temporary?
+- Should a human review the situation?
+
+PhoenixML attempts to answer these questions through intelligent maintenance recommendations generated by the AIMD engine.
+
+---
+
+## 1.5 Objectives
+
+The primary objectives of PhoenixML are:
+
+- Design an intelligent MLOps decision-support framework.
+- Monitor deployed spam email detection models.
+- Detect performance degradation.
+- Detect data drift and concept drift.
+- Analyze model health continuously.
+- Explain the causes of degradation.
+- Develop the Adaptive Intelligent Model Decision (AIMD) engine.
+- Recommend appropriate maintenance strategies.
+- Maintain complete decision history.
+- Provide interactive dashboards for monitoring.
+- Build the foundation for future semi-automated maintenance pipelines.
+
+---
+
+## 1.6 Intended Audience
 
 This document is intended for:
 
-- Project developers
-- B.Tech evaluators
-- Supervisors
-- Future contributors
-- Software testers
+- B.Tech Project Evaluators
+- Project Supervisor
+- Software Developers
+- ML Engineers
+- Future Contributors
+- Software Testers
+- Researchers interested in MLOps and Intelligent Model Maintenance
 
 ---
 
-## 1.4 Definitions
+## 1.7 Definitions
 
-| Term | Meaning |
-|-------|---------|
+| Term | Description |
+|------|-------------|
 | AIMD | Adaptive Intelligent Model Decision |
-| ML | Machine Learning |
 | MLOps | Machine Learning Operations |
-| API | Application Programming Interface |
-| JWT | JSON Web Token |
-| Drift | Change in data distribution affecting model performance |
+| Data Drift | Change in input data distribution over time |
+| Concept Drift | Change in relationship between input features and target labels |
+| Champion Model | Current production spam detection model |
+| Challenger Model | Newly retrained candidate model |
+| Rollback | Restoring a previous stable model version |
+| Explainable AI (XAI) | Techniques used to explain model behavior |
+| Health Score | Composite score representing current model condition |
+| Maintenance Recommendation | Suggested action generated by AIMD |
+| Spam Detection Model | Machine Learning model used for classifying emails as Spam or Ham |
+
+---
+
+## 1.8 Why Spam Email Detection?
+
+Spam email detection is selected as the implementation domain because it presents one of the most dynamic machine learning environments.
+
+New spam campaigns emerge continuously, forcing deployed models to adapt to:
+
+- New phishing attacks
+- New vocabulary
+- New writing styles
+- AI-generated spam
+- URL manipulation
+- Character obfuscation
+
+This continuous evolution naturally introduces concept drift, making spam email detection an excellent case study for intelligent model maintenance.
+
+The framework developed in PhoenixML can later be generalized to other ML applications such as fraud detection, medical diagnosis, intrusion detection, and recommendation systems.
+
+---
+
+## 1.9 Assumptions
+
+The following assumptions are considered during development:
+
+- A trained spam email detection model already exists.
+- Incoming email predictions are continuously available.
+- Monitoring metrics can be collected periodically.
+- Users possess basic MLOps knowledge.
+- PostgreSQL stores monitoring information.
+- FastAPI provides backend APIs.
+- React provides the frontend dashboard.
+- AIMD recommendations assist humans rather than replacing them.
+
+---
+
+## 1.10 System Overview
+
+PhoenixML operates as an intelligent monitoring and maintenance recommendation framework.
+
+Overall workflow:
+
+```
+
+Incoming Emails
+↓
+Spam Detection Model
+↓
+Prediction Logs
+↓
+PhoenixML Monitoring Engine
+↓
+Performance Analysis
+↓
+Data Drift Detection
+↓
+Concept Drift Detection
+↓
+Model Health Assessment
+↓
+Explainability Engine
+↓
+Adaptive Intelligent Model Decision (AIMD)
+↓
+Maintenance Recommendation
+↓
+Human Decision
+
+```
+
+Future versions extend the workflow by introducing automatic retraining, Champion–Challenger evaluation, and deployment approval while maintaining human oversight.
 
 ---
 
@@ -64,43 +226,175 @@ This document is intended for:
 
 ## 2.1 Product Perspective
 
-PhoenixML is a web-based decision-support platform consisting of:
+PhoenixML is a web-based intelligent MLOps decision-support framework designed specifically for maintaining deployed Spam Email Detection models.
 
-- React Frontend
-- FastAPI Backend
-- PostgreSQL Database
-- AIMD Decision Engine
-- Monitoring Engine
+The system operates alongside an existing spam email classifier and continuously monitors its operational health throughout the deployment lifecycle.
+
+Unlike conventional MLOps monitoring platforms that primarily generate alerts, PhoenixML analyzes monitoring metrics, explains model degradation, and recommends intelligent maintenance strategies through the Adaptive Intelligent Model Decision (AIMD) engine.
+
+PhoenixML does not replace the spam classification model. Instead, it enhances the model's reliability by providing continuous monitoring and intelligent maintenance recommendations.
+
+The architecture follows a modular design consisting of independent components that communicate through REST APIs, enabling future scalability and maintainability.
 
 ---
 
-## 2.2 Product Features
+## 2.2 Product Functions
 
-Major features include:
+PhoenixML provides the following core functionalities:
 
-- Secure login
-- Dashboard
-- Model registration
-- Model monitoring
-- Drift detection
-- Health score computation
-- Maintenance recommendations
-- Decision logs
-- Visualization
-- Settings management
+### Authentication Module
+
+- User Registration
+- User Login
+- JWT Authentication
+- Role-Based Authorization
+- Password Encryption
+
+---
+
+### Spam Model Management
+
+- Register deployed spam detection models
+- Store model metadata
+- Manage model versions
+- View deployment history
+- Track active model
+
+---
+
+### Monitoring Module
+
+The monitoring engine continuously evaluates the deployed spam detection model using various performance indicators.
+
+Metrics include:
+
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- Prediction Confidence
+- False Positive Rate
+- False Negative Rate
+- Email Classification Distribution
+
+---
+
+### Drift Detection Module
+
+PhoenixML continuously monitors changes occurring in incoming email data.
+
+The module detects:
+
+- Data Drift
+- Concept Drift
+- Feature Distribution Changes
+- Vocabulary Changes
+- Prediction Distribution Changes
+
+---
+
+### Health Assessment Module
+
+The Health Assessment module computes an overall health score representing the operational condition of the deployed spam detection model.
+
+Health Score is calculated using:
+
+- Performance Metrics
+- Drift Indicators
+- Prediction Confidence
+- Historical Performance
+- Stability Trends
+
+Health categories include:
+
+- Excellent
+- Good
+- Moderate
+- Poor
+- Critical
+
+---
+
+### Explainability Module
+
+The Explainability Engine analyzes the monitored metrics and provides understandable explanations for model degradation.
+
+Example explanations include:
+
+- Increase in false positive predictions.
+- Significant vocabulary shift detected.
+- Data distribution differs from training dataset.
+- Prediction confidence has decreased.
+
+---
+
+### AIMD Decision Engine
+
+The Adaptive Intelligent Model Decision (AIMD) engine acts as the intelligence layer of PhoenixML.
+
+It evaluates all monitoring information before recommending the most appropriate maintenance strategy.
+
+Possible recommendations include:
+
+- Continue Monitoring
+- Increase Monitoring Frequency
+- Collect Recent Spam Emails
+- Retrain Candidate Model
+- Rollback to Previous Model
+- Request Human Review
+
+---
+
+### Dashboard Module
+
+The dashboard provides a centralized interface for visualizing model health.
+
+Dashboard features include:
+
+- Current Model Health
+- Accuracy Trend
+- Precision Trend
+- Recall Trend
+- F1 Score Trend
+- Drift Indicators
+- Health Score
+- Recommendation History
+- Model Version Information
+- Recent Alerts
+
+---
+
+### Decision History Module
+
+Every AIMD recommendation is permanently stored.
+
+Users can:
+
+- Search recommendations
+- Filter recommendations
+- Review previous decisions
+- Compare historical model health
 
 ---
 
 ## 2.3 User Classes
 
+PhoenixML supports three categories of users.
+
 ### Administrator
 
 Responsibilities:
 
-- Manage users
-- Configure thresholds
-- Manage models
-- Review recommendations
+- Manage user accounts
+- Configure monitoring thresholds
+- Register deployed models
+- Approve maintenance actions
+- View complete system analytics
+- Manage system settings
+
+Permissions:
+
+- Full system access
 
 ---
 
@@ -108,10 +402,19 @@ Responsibilities:
 
 Responsibilities:
 
-- Register models
-- Monitor health
-- View recommendations
-- Execute maintenance
+- Register spam detection models
+- Monitor deployed models
+- View model health
+- Review AIMD recommendations
+- Execute approved maintenance
+- Analyze drift reports
+
+Permissions:
+
+- Model management
+- Monitoring
+- Recommendations
+- Reports
 
 ---
 
@@ -119,333 +422,1265 @@ Responsibilities:
 
 Responsibilities:
 
-- Read-only dashboard access
+- Monitor dashboard
+- View reports
+- Observe system status
+
+Permissions:
+
+- Read-only access
+
+---
+
+## 2.4 Operating Environment
+
+PhoenixML operates in the following environment.
+
+### Backend
+
+- Python 3.12+
+- FastAPI
+- SQLAlchemy
+- Pydantic
+
+---
+
+### Frontend
+
+- React
+- TypeScript
+- Tailwind CSS
+
+---
+
+### Database
+
+- PostgreSQL
+
+---
+
+### ML Libraries
+
+- Scikit-learn
+- MLflow
+- Evidently AI
+- SHAP (Future)
+- LIME (Future)
+
+---
+
+### Deployment
+
+Development:
+
+- Windows
+
+Production (Future):
+
+- Docker
+- Linux
+- Kubernetes
+
+---
+
+## 2.5 Design Constraints
+
+The following constraints are considered during development.
+
+### Technical Constraints
+
+- FastAPI shall be used for backend development.
+- PostgreSQL shall be used as the primary database.
+- JWT shall be used for authentication.
+- React shall be be used for frontend development.
+
+---
+
+### Project Constraints
+
+- Initial implementation focuses only on Spam Email Detection.
+- Human approval is mandatory before deployment.
+- Automatic retraining is considered future work.
+- Dashboard must support real-time monitoring.
+
+---
+
+## 2.6 System Architecture
+
+PhoenixML follows a layered architecture.
+
+```
+
+Users
+
+↓
+
+React Frontend
+
+↓
+
+FastAPI REST API
+
+↓
+
+Business Logic Layer
+
+↓
+
+Authentication Module
+
+Monitoring Module
+
+Drift Detection Module
+
+Health Assessment Module
+
+Explainability Module
+
+AIMD Decision Engine
+
+↓
+
+PostgreSQL Database
+
+↓
+
+Spam Email Detection Model
+
+```
+
+Each module is loosely coupled to simplify future enhancements and maintenance.
+
+---
+
+## 2.7 Product Benefits
+
+PhoenixML provides several advantages over traditional monitoring systems.
+
+### Operational Benefits
+
+- Reduces manual monitoring effort.
+- Detects model degradation early.
+- Provides explainable maintenance recommendations.
+- Improves decision-making.
+- Maintains complete maintenance history.
+
+---
+
+### Academic Benefits
+
+The project provides practical exposure to:
+
+- MLOps
+- Explainable AI
+- Machine Learning Maintenance
+- Drift Detection
+- Decision Support Systems
+- REST API Development
+- Database Design
+- Full Stack Development
+
+---
+
+### Industrial Benefits
+
+PhoenixML helps organizations:
+
+- Maintain spam detection accuracy.
+- Reduce operational downtime.
+- Improve trust in deployed ML systems.
+- Support human-in-the-loop maintenance.
+- Build maintainable AI systems.
+
+---
+
+## 2.8 Future Expansion
+
+Although PhoenixML is implemented using Spam Email Detection as the target application, the underlying architecture is designed to be extensible.
+
+Future versions can be adapted for:
+
+- Fraud Detection
+- Intrusion Detection Systems
+- Medical Diagnosis
+- Credit Risk Prediction
+- Recommendation Systems
+- Predictive Maintenance
+- Customer Churn Prediction
+
+Only the monitored ML model changes, while the monitoring, explainability, and AIMD components remain reusable.
 
 ---
 
 # 3. Functional Requirements
 
----
-
-## FR-1 User Authentication
-
-The system shall:
-
-- Register users
-- Login users
-- Logout users
-- Reset passwords
-- Authenticate using JWT
+The functional requirements define the core capabilities that PhoenixML shall provide to monitor, analyze, and maintain deployed Spam Email Detection models.
 
 ---
 
-## FR-2 Dashboard
+# FR-1 User Authentication
 
-The dashboard shall display:
+## Description
 
-- Active models
-- Health scores
-- Drift indicators
-- Recent recommendations
-- Recent activities
+The system shall provide secure authentication and authorization for all users.
+
+## Functional Requirements
+
+The system shall allow users to:
+
+- Register new accounts.
+- Login using email and password.
+- Logout securely.
+- Reset forgotten passwords.
+- Change passwords.
+- Authenticate using JWT.
+- Maintain authenticated sessions.
+- Restrict unauthorized access.
+
+## Priority
+
+High
 
 ---
 
-## FR-3 Model Management
+# FR-2 User Management
+
+## Description
+
+Administrators shall manage user accounts.
+
+## Functional Requirements
+
+Administrators shall be able to:
+
+- View users.
+- Activate users.
+- Deactivate users.
+- Assign roles.
+- Remove users.
+- View login history.
+
+## Priority
+
+Medium
+
+---
+
+# FR-3 Spam Detection Model Management
+
+## Description
+
+PhoenixML shall maintain information about deployed Spam Email Detection models.
+
+## Functional Requirements
 
 Users shall be able to:
 
-- Register models
-- Update model details
-- Delete models
-- View model information
-- Manage versions
+- Register deployed spam detection models.
+- View model information.
+- Update model metadata.
+- Archive models.
+- Track model versions.
+- Compare model versions.
+
+Each model record shall include:
+
+- Model Name
+- Version
+- Training Dataset
+- Training Date
+- Current Status
+- Performance Metrics
+- Deployment Date
+
+## Priority
+
+High
 
 ---
 
-## FR-4 Monitoring
+# FR-4 Prediction Monitoring
 
-The system shall monitor:
+## Description
+
+PhoenixML shall continuously monitor prediction performance of the deployed spam detection model.
+
+## Functional Requirements
+
+The monitoring engine shall periodically collect:
 
 - Accuracy
-- Confidence
-- Drift
-- Data quality
-- Latency
-- Resource usage
+- Precision
+- Recall
+- F1 Score
+- Prediction Confidence
+- False Positive Rate
+- False Negative Rate
+- Number of Predictions
+- Spam Classification Rate
+- Ham Classification Rate
+
+The collected metrics shall be stored for historical analysis.
+
+## Priority
+
+High
 
 ---
 
-## FR-5 Health Assessment
+# FR-5 Drift Detection
 
-The system shall:
+## Description
 
-- Normalize monitoring metrics
-- Calculate health score
-- Assign health status
-- Store results
+PhoenixML shall detect changes occurring within incoming email data.
+
+## Functional Requirements
+
+The system shall detect:
+
+### Data Drift
+
+Changes in incoming email feature distribution.
+
+Examples:
+
+- Vocabulary changes
+- Sender distribution changes
+- Subject line distribution changes
 
 ---
 
-## FR-6 AIMD Recommendation Engine
+### Concept Drift
 
-The system shall:
+Changes in relationship between email features and spam labels.
 
-- Evaluate monitoring metrics
-- Analyze context
-- Recommend maintenance actions
-- Generate explanations
-- Store recommendation history
+Examples:
+
+- New phishing techniques
+- AI-generated spam
+- Obfuscated keywords
 
 ---
 
-## FR-7 Decision Logs
+### Prediction Drift
+
+Changes in prediction distribution.
+
+Examples:
+
+- Sudden increase in spam predictions.
+- Sudden increase in ham predictions.
+
+## Priority
+
+High
+
+---
+
+# FR-6 Health Assessment
+
+## Description
+
+PhoenixML shall continuously evaluate overall model health.
+
+Health Score shall be calculated using:
+
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- Drift Score
+- Prediction Confidence
+- Historical Stability
+
+Health categories:
+
+| Score | Status |
+|--------|--------|
+| 90–100 | Excellent |
+| 75–89 | Good |
+| 60–74 | Moderate |
+| 40–59 | Poor |
+| Below 40 | Critical |
+
+Health shall be recalculated after every monitoring cycle.
+
+## Priority
+
+High
+
+---
+
+# FR-7 Explainability Module
+
+## Description
+
+The Explainability Engine shall generate human-readable explanations describing the causes of model degradation.
+
+Example explanations include:
+
+- Vocabulary distribution has shifted.
+- False positives increased significantly.
+- Prediction confidence decreased.
+- Recent spam emails differ from training data.
+- Drift exceeds configured threshold.
+
+The explanations shall accompany every AIMD recommendation.
+
+## Priority
+
+High
+
+---
+
+# FR-8 AIMD Recommendation Engine
+
+## Description
+
+The Adaptive Intelligent Model Decision (AIMD) Engine shall analyze monitoring metrics and recommend the most appropriate maintenance strategy.
+
+AIMD shall evaluate:
+
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- Drift Score
+- Prediction Confidence
+- Historical Trends
+- Previous Maintenance Actions
+
+Possible recommendations include:
+
+- Continue Monitoring
+- Increase Monitoring Frequency
+- Collect More Recent Spam Emails
+- Retrain Candidate Model
+- Rollback to Previous Stable Model
+- Human Review Required
+
+Every recommendation shall include:
+
+- Recommendation ID
+- Timestamp
+- Confidence Score
+- Reasoning
+- Supporting Metrics
+
+Recommendations shall be stored permanently.
+
+## Priority
+
+Critical
+
+---
+
+# FR-9 Dashboard
+
+## Description
+
+PhoenixML shall provide an interactive dashboard.
+
+Dashboard widgets include:
+
+- Current Health Score
+- Accuracy Trend
+- Precision Trend
+- Recall Trend
+- F1 Trend
+- Drift Score
+- Current Recommendation
+- Model Version
+- Alert Status
+- Recommendation History
+
+Dashboard data shall refresh automatically.
+
+## Priority
+
+Medium
+
+---
+
+# FR-10 Reports
+
+## Description
+
+The system shall generate analytical reports.
+
+Reports shall include:
+
+- Performance Summary
+- Drift Analysis
+- Recommendation History
+- Health Timeline
+- Maintenance Timeline
+
+Reports shall support PDF export.
+
+## Priority
+
+Medium
+
+---
+
+# FR-11 Notifications
+
+## Description
+
+PhoenixML shall notify users when critical events occur.
+
+Notification events include:
+
+- Health becomes Poor
+- Health becomes Critical
+- Drift threshold exceeded
+- Human review required
+- New recommendation generated
+
+Notification channels (future):
+
+- Dashboard
+- Email
+- Mobile Push
+
+## Priority
+
+Medium
+
+---
+
+# FR-12 Decision History
+
+## Description
+
+PhoenixML shall maintain complete recommendation history.
 
 Users shall be able to:
 
-- View recommendations
-- Search logs
-- Filter logs
-- Export logs
+- Search recommendations
+- Filter recommendations
+- View explanations
+- Compare recommendations
+- Export recommendation history
+
+Decision history shall remain immutable.
+
+## Priority
+
+High
 
 ---
 
-## FR-8 Notifications
+# Maintenance Decision Matrix
 
-The system shall notify users when:
+The AIMD Engine shall use monitored metrics to determine the most appropriate maintenance strategy.
 
-- Health becomes poor
-- Drift exceeds threshold
-- Human review is required
+| Health Status | Drift | Recommendation |
+|---------------|--------|----------------|
+| Excellent | Low | Continue Monitoring |
+| Good | Moderate | Increase Monitoring |
+| Moderate | High | Collect Recent Spam Emails |
+| Poor | High | Retrain Candidate Model |
+| Critical | Very High | Human Review + Rollback Consideration |
 
----
-
-## FR-9 Reports
-
-Users shall be able to generate reports containing:
-
-- Model health
-- Recommendations
-- Drift statistics
-- Performance summary
+This decision matrix forms the core decision-support logic of PhoenixML and may evolve into a more advanced intelligent policy in future versions.
 
 ---
 
 # 4. Non-Functional Requirements
 
----
-
-## Performance
-
-- API response < 500 ms
-- Dashboard load < 3 seconds
+Non-functional requirements define the quality attributes and operational characteristics of PhoenixML.
 
 ---
 
-## Reliability
+# NFR-1 Performance
 
-- Daily backups
-- Error logging
-- Graceful failure handling
+## Description
 
----
+PhoenixML shall provide timely monitoring and decision support.
 
-## Security
+### Requirements
 
-- JWT authentication
-- Password hashing
-- HTTPS support
-- Role-based access
+- API response time should generally be less than **2 seconds** under normal load.
+- Dashboard data should refresh within **5 seconds** after new monitoring data becomes available.
+- Health score calculation should complete within **10 seconds** after receiving new monitoring metrics.
+- AIMD recommendations should be generated within **15 seconds** after a monitoring cycle finishes.
 
----
-
-## Scalability
-
-The architecture shall support:
-
-- Multiple users
-- Multiple models
-- Future distributed deployment
+Priority: **High**
 
 ---
 
-## Maintainability
+# NFR-2 Reliability
 
-The software shall use:
+## Description
 
-- Modular architecture
-- Clean APIs
-- Documentation
-- Configurable settings
+PhoenixML shall provide reliable monitoring and maintain data consistency.
+
+### Requirements
+
+- Monitoring data shall be stored without loss.
+- System failures shall not corrupt stored monitoring history.
+- Recommendation history shall remain immutable.
+- Failed monitoring tasks shall be logged for investigation.
+
+Priority: **High**
 
 ---
 
-## Availability
+# NFR-3 Availability
 
-Target uptime:
+## Description
 
-99%
+The system should remain available during normal operation.
+
+### Requirements
+
+- Backend services should remain operational except during scheduled maintenance.
+- Dashboard should remain accessible whenever backend services are running.
+- Temporary API failures should return meaningful error responses.
+
+Priority: **Medium**
+
+---
+
+# NFR-4 Security
+
+## Description
+
+PhoenixML shall protect user accounts and monitoring data.
+
+### Requirements
+
+- Passwords shall be securely hashed before storage.
+- Authentication shall use JWT access tokens.
+- Unauthorized requests shall be rejected.
+- Role-Based Access Control (RBAC) shall restrict sensitive operations.
+- HTTPS should be used in production environments.
+- Sensitive information shall never be exposed in API responses.
+
+Priority: **Critical**
+
+---
+
+# NFR-5 Scalability
+
+## Description
+
+The system architecture shall support future expansion.
+
+### Requirements
+
+PhoenixML should support:
+
+- Multiple deployed spam detection models.
+- Additional monitoring metrics.
+- New recommendation strategies.
+- Future integration with automated retraining pipelines.
+- Expansion to other machine learning domains.
+
+Priority: **Medium**
+
+---
+
+# NFR-6 Maintainability
+
+## Description
+
+The software shall be easy to maintain and extend.
+
+### Requirements
+
+- Backend shall follow a modular architecture.
+- Business logic shall be separated from API routes.
+- Database models shall be isolated from service logic.
+- Code should follow consistent naming conventions.
+- Modules should have minimal dependencies.
+
+Priority: **High**
+
+---
+
+# NFR-7 Usability
+
+## Description
+
+PhoenixML shall provide a simple and intuitive user experience.
+
+### Requirements
+
+- Dashboard should present important metrics clearly.
+- Navigation should be consistent across pages.
+- Error messages should be meaningful.
+- Users should access major features within a few clicks.
+
+Priority: **Medium**
+
+---
+
+# NFR-8 Compatibility
+
+## Description
+
+PhoenixML shall support modern development environments.
+
+### Requirements
+
+Backend:
+
+- Python 3.12+
+- FastAPI
+
+Frontend:
+
+- React
+- TypeScript
+- Modern web browsers
+
+Database:
+
+- PostgreSQL
+
+Priority: **Low**
+
+---
+
+# NFR-9 Logging
+
+## Description
+
+System activities shall be logged.
+
+### Logs include:
+
+- User login events
+- Model registration
+- Monitoring execution
+- Drift detection events
+- AIMD recommendations
+- System errors
+- API failures
+
+Priority: **Medium**
+
+---
+
+# NFR-10 Extensibility
+
+## Description
+
+The framework shall support future enhancements.
+
+Future modules may include:
+
+- Automatic retraining
+- Champion–Challenger evaluation
+- Explainable AI (SHAP/LIME)
+- CI/CD integration
+- MLflow model registry
+- Multi-model monitoring
+- Multi-domain support
+
+Priority: **Medium**
 
 ---
 
 # 5. External Interface Requirements
 
-## User Interface
+## 5.1 User Interface
 
-The web interface shall include:
+The system shall provide a responsive web interface containing:
 
-- Login page
+- Login Page
+- Registration Page
 - Dashboard
-- Models page
-- Monitoring page
-- Recommendations page
-- Decision logs
-- Settings
+- Model Management
+- Monitoring Dashboard
+- Drift Analysis
+- Recommendation History
+- Reports
+- User Profile
+- System Settings
 
 ---
 
-## API Interface
+## 5.2 Software Interfaces
 
-REST APIs shall support:
+PhoenixML interacts with:
 
-- JSON requests
-- JSON responses
-- JWT authentication
-
----
-
-## Database Interface
-
-Database:
-
-PostgreSQL
-
-ORM:
-
-SQLAlchemy
+| Component | Purpose |
+|-----------|---------|
+| FastAPI | Backend REST API |
+| PostgreSQL | Data Storage |
+| Scikit-learn | ML Model Integration |
+| MLflow (Future) | Model Tracking |
+| Evidently AI | Drift Detection |
+| React | Frontend |
 
 ---
 
-# 6. System Constraints
+## 5.3 Hardware Interfaces
 
-The project uses:
+Minimum development environment:
 
-- Python 3.12+
-- FastAPI
-- React
-- PostgreSQL
-- MLflow
-- Evidently AI
+- Dual-core processor
+- 8 GB RAM
+- 10 GB free disk space
+
+Recommended:
+
+- Quad-core processor
+- 16 GB RAM
+- SSD storage
+
+---
+
+## 5.4 Communication Interfaces
+
+Communication between frontend and backend shall use:
+
+- HTTP/HTTPS
+- REST APIs
+- JSON request/response format
+
+Future versions may support:
+
+- WebSockets
+- Message Queues
+- Event Streaming
+
+---
+
+# 6. Design Constraints
+
+The following constraints apply to PhoenixML.
+
+## Technical Constraints
+
+- Backend shall use FastAPI.
+- Frontend shall use React.
+- Database shall use PostgreSQL.
+- Authentication shall use JWT.
+- Python shall be the primary programming language.
+
+---
+
+## Academic Constraints
+
+- The project is developed as a B.Tech Final Year Project.
+- Spam Email Detection is the implementation domain.
+- Human approval remains mandatory before production deployment.
+- Automatic deployment is outside the scope of the current version.
+
+---
+
+## Operational Constraints
+
+- Monitoring depends on availability of prediction logs.
+- Health assessment requires periodic metric collection.
+- AIMD recommendations are advisory and do not execute maintenance automatically.
+
+---
+
+# 7. Business Rules
+
+The following rules govern system behavior.
+
+### BR-1
+
+Only authenticated users may access the system.
+
+---
+
+### BR-2
+
+Only Administrators may register or archive deployed models.
+
+---
+
+### BR-3
+
+Only one spam detection model may be marked as the active production model at a time.
+
+---
+
+### BR-4
+
+Every AIMD recommendation shall include an explanation describing why the recommendation was generated.
+
+---
+
+### BR-5
+
+All recommendations shall be stored permanently and must not be modified after creation.
+
+---
+
+### BR-6
+
+Health Score shall be recalculated after each monitoring cycle.
+
+---
+
+### BR-7
+
+Critical health conditions shall generate alerts.
+
+---
+
+### BR-8
+
+Historical monitoring data shall remain available for trend analysis.
+
+---
+
+### BR-9
+
+Rollback recommendations shall require administrator approval before execution.
+
+---
+
+### BR-10
+
+Future automatic retraining workflows shall require human approval before deployment.
+
+---
+
+# 8. Use Case Specifications
+
+## UC-1 User Login
+
+### Description
+
+Allows registered users to securely access the PhoenixML system.
+
+### Primary Actor
+
+- Administrator
+- ML Engineer
+- Viewer
+
+### Preconditions
+
+- User account exists.
+- User account is active.
+
+### Main Flow
+
+1. User opens the login page.
+2. User enters email and password.
+3. System validates credentials.
+4. JWT token is generated.
+5. User is redirected to the dashboard.
+
+### Alternate Flow
+
+- Invalid credentials are entered.
+- System displays an authentication error.
+
+### Postconditions
+
+- User session is established.
+- Dashboard becomes accessible.
+
+---
+
+## UC-2 Register Spam Detection Model
+
+### Primary Actor
+
+Administrator
+
+### Description
+
+Registers a deployed spam detection model for monitoring.
+
+### Preconditions
+
+- Administrator is authenticated.
+
+### Main Flow
+
+1. Administrator opens Model Management.
+2. Clicks "Register Model".
+3. Enters model information.
+4. Uploads metadata.
+5. System validates information.
+6. Model is saved.
+7. Model becomes available for monitoring.
+
+### Postconditions
+
+- Model appears in the model registry.
+
+---
+
+## UC-3 Monitor Model Health
+
+### Primary Actor
+
+ML Engineer
+
+### Description
+
+Continuously evaluates the health of the deployed spam detection model.
+
+### Main Flow
+
+1. Monitoring engine collects metrics.
+2. Drift analysis executes.
+3. Health score is calculated.
+4. Dashboard is updated.
+5. Results are stored.
+
+### Postconditions
+
+Latest health information becomes available.
+
+---
+
+## UC-4 Generate AIMD Recommendation
+
+### Primary Actor
+
+System
+
+### Description
+
+Generates intelligent maintenance recommendations.
+
+### Main Flow
+
+1. Health score calculated.
+2. Drift evaluated.
+3. Historical trends analyzed.
+4. AIMD decision rules executed.
+5. Recommendation generated.
+6. Recommendation stored.
+7. Dashboard updated.
+
+### Output
+
+Example:
+
+Recommendation:
+Increase Monitoring Frequency
+
+Reason:
+Moderate data drift detected while performance remains stable.
+
+---
+
+## UC-5 View Dashboard
+
+### Primary Actor
+
+All Users
+
+### Description
+
+Displays system monitoring information.
+
+Dashboard includes:
+
+- Health Score
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- Drift Score
+- Current Recommendation
+- Alerts
+- Historical Trends
+
+---
+
+## UC-6 View Recommendation History
+
+### Primary Actor
+
+ML Engineer
+
+### Description
+
+Displays all historical AIMD decisions.
+
+User may:
+
+- Search
+- Filter
+- Sort
+- Export
+
+---
+
+# 9. Acceptance Criteria
+
+PhoenixML shall be considered successfully implemented if the following conditions are satisfied.
+
+## Authentication
+
+✔ User registration works.
+
+✔ User login works.
+
+✔ JWT authentication is functional.
+
+✔ Unauthorized access is blocked.
+
+---
+
+## Model Management
+
+✔ Spam detection models can be registered.
+
+✔ Model metadata is stored.
+
+✔ Model versions are tracked.
+
+---
+
+## Monitoring
+
+✔ Performance metrics are collected.
+
+✔ Dashboard displays latest metrics.
+
+✔ Historical metrics are stored.
+
+---
+
+## Drift Detection
+
+✔ Data drift can be detected.
+
+✔ Concept drift can be detected.
+
+✔ Drift results are visualized.
+
+---
+
+## Health Assessment
+
+✔ Health score is calculated.
+
+✔ Health categories are assigned correctly.
+
+---
+
+## AIMD
+
+✔ Recommendations are generated.
+
+✔ Every recommendation contains an explanation.
+
+✔ Recommendation history is stored.
+
+---
+
+## Dashboard
+
+✔ Dashboard updates successfully.
+
+✔ Charts display historical trends.
+
+✔ Current recommendation is visible.
+
+---
+
+## Reports
+
+✔ Reports can be generated.
+
+✔ Reports can be exported.
+
+---
+
+# 10. Assumptions
+
+The following assumptions are made during development.
+
+- A trained spam detection model already exists.
+- Prediction logs are continuously available.
+- Monitoring metrics are periodically collected.
+- PostgreSQL stores monitoring information.
+- Internet connectivity is available.
+- Users possess basic ML knowledge.
+
+---
+
+# 11. Limitations
+
+Current project limitations include:
+
+- Supports only Spam Email Detection.
+- Automatic deployment is not implemented.
+- Human approval remains mandatory.
+- Real-time streaming is outside the current scope.
+- Multi-model monitoring is reserved for future work.
+
+---
+
+# 12. Future Scope
+
+Future versions of PhoenixML may include:
+
+## Intelligent Maintenance
+
+- Automatic retraining
+- Champion–Challenger evaluation
+- Continuous deployment approval workflow
+
+---
+
+## Explainable AI
+
+- SHAP integration
+- LIME integration
+- Root cause visualization
+
+---
+
+## Advanced Monitoring
+
+- Real-time monitoring
+- Streaming analytics
+- Predictive maintenance
+
+---
+
+## Cloud Deployment
+
 - Docker
+- Kubernetes
+- MLflow
+- CI/CD pipelines
 
 ---
 
-# 7. Assumptions
+## Multi-Domain Support
 
-- Monitoring data is available.
-- Users have internet connectivity.
-- Models are already deployed.
-- MLflow and Evidently AI can be integrated when required.
+The architecture can be extended for:
 
----
-
-# 8. Use Cases
-
----
-
-## UC-1 Login
-
-Actor:
-
-User
-
-Flow:
-
-1. Enter credentials.
-2. Authenticate.
-3. Open dashboard.
+- Fraud Detection
+- Intrusion Detection
+- Credit Risk Prediction
+- Medical Diagnosis
+- Recommendation Systems
+- Predictive Maintenance
 
 ---
 
-## UC-2 Register Model
+# 13. Conclusion
 
-Actor:
+PhoenixML is an intelligent MLOps decision-support framework developed for maintaining deployed Spam Email Detection models.
 
-ML Engineer
+Instead of merely reporting model degradation, PhoenixML continuously monitors deployed models, evaluates operational health, detects data drift and concept drift, explains degradation, and generates adaptive maintenance recommendations using the Adaptive Intelligent Model Decision (AIMD) engine.
 
-Flow:
+The framework combines machine learning monitoring, explainability, and decision support into a unified architecture while maintaining human oversight for critical maintenance actions.
 
-1. Open Models.
-2. Enter model details.
-3. Save model.
+Although the current implementation focuses on Spam Email Detection, the architecture is designed to be extensible and reusable across multiple machine learning domains.
 
----
-
-## UC-3 Evaluate Model
-
-Actor:
-
-AIMD Engine
-
-Flow:
-
-1. Collect monitoring metrics.
-2. Calculate health score.
-3. Evaluate context.
-4. Recommend action.
-5. Save decision.
+PhoenixML establishes a strong foundation for future intelligent MLOps systems capable of supporting semi-automated model maintenance while preserving transparency, reliability, and human control.
 
 ---
-
-## UC-4 Review Recommendation
-
-Actor:
-
-ML Engineer
-
-Flow:
-
-1. Open Recommendations.
-2. View explanation.
-3. Accept or reject recommendation.
-
----
-
-# 9. Business Rules
-
-- Every recommendation must include an explanation.
-- Every recommendation shall be stored.
-- Health score must be calculated before making recommendations.
-- Human approval is required before deployment or rollback.
-
----
-
-# 10. Future Scope
-
-Future enhancements include:
-
-- Reinforcement Learning–based policy optimization
-- Kubernetes deployment
-- Federated learning support
-- Cloud-native deployment
-- Cost-aware maintenance strategies
-
----
-
-# 11. Acceptance Criteria
-
-PhoenixML shall be considered complete when:
-
-- User authentication works correctly.
-- Models can be registered and monitored.
-- Health scores are calculated.
-- AIMD generates recommendations.
-- Recommendations include explanations.
-- Decision logs are stored.
-- Dashboard visualizes monitoring data.
-
----
-
-# 12. Conclusion
-
-The Software Requirements Specification defines the functional and non-functional requirements for PhoenixML. It serves as the foundation for system design, implementation, testing, and future maintenance, ensuring that the platform remains modular, explainable, and aligned with the project's objective of intelligent machine learning model maintenance.

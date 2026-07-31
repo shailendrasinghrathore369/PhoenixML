@@ -1,10 +1,31 @@
-# Software Design Document (SDD)
+# Software Design Document
 
-**Project:** PhoenixML
+**Project:** PhoenixML – An Intelligent MLOps Decision Support Framework for Spam Email Detection
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Prepared By:** Shailendra Singh Rathore
+
+**Document Type:** Software Design Document (SDD)
+
+---
+
+# Revision History
+
+| Version | Date | Author | Description |
+|---------|------|--------|-------------|
+| 1.0 | XX/XX/2026 | Shailendra Singh Rathore | Initial Software Design Document |
+| 2.0 | XX/XX/2026 | Shailendra Singh Rathore | Redesigned architecture aligned with PhoenixML v2.0 |
+
+---
+
+# Table of Contents
+
+1. Introduction
+2. Design Objectives
+3. Scope
+4. Technology Stack
+5. High-Level System Overview
 
 ---
 
@@ -12,477 +33,839 @@
 
 ## 1.1 Purpose
 
-This Software Design Document (SDD) describes the internal design and implementation of PhoenixML. It translates the requirements defined in the Software Requirements Specification (SRS) into a modular software architecture that guides development.
+This Software Design Document (SDD) describes the internal architecture and design of **PhoenixML – An Intelligent MLOps Decision Support Framework for Spam Email Detection**.
 
-The document defines system modules, component interactions, database organization, API communication, and design principles used throughout the project.
+The document translates the functional and non-functional requirements defined in the Software Requirements Specification (SRS) into a structured software design. It explains how the system is organized into modules, how these modules communicate, and how major design decisions support maintainability, scalability, and future enhancements.
 
----
-
-# 2. Design Goals
-
-The software is designed with the following goals:
-
-- Modular architecture
-- High maintainability
-- Explainable decision making
-- Scalability
-- Separation of concerns
-- Secure communication
-- Easy future extension
+This document serves as a blueprint for developers during implementation and provides a clear understanding of the overall system architecture.
 
 ---
 
-# 3. Overall Design
+## 1.2 Scope
+
+The design presented in this document covers all major software components of PhoenixML, including:
+
+- User Authentication
+- Spam Model Registry
+- Production Monitoring
+- Drift Detection
+- Health Assessment
+- Adaptive Intelligent Model Decision (AIMD) Engine
+- Reporting
+- Dashboard
+- Notification Management
+
+Detailed database schema and REST API specifications are documented separately in the **Database Design Document** and **API Design Document**.
+
+---
+
+# 2. Design Objectives
+
+The architecture of PhoenixML has been designed with the following objectives:
+
+### Maintainability
+
+The system is organized into independent modules so that new features or modifications can be introduced with minimal impact on existing components.
+
+### Scalability
+
+The architecture supports the addition of multiple models, users, and monitoring records while maintaining system performance.
+
+### Modularity
+
+Each module performs a specific responsibility, improving readability, testing, and maintenance.
+
+### Security
+
+Authentication, authorization, and secure communication mechanisms are integrated throughout the system to protect sensitive information.
+
+### Extensibility
+
+The design allows future integration of additional MLOps capabilities such as automated retraining, MLflow integration, and support for domains beyond spam email detection.
+
+---
+
+# 3. Technology Stack
+
+PhoenixML is implemented using modern web and machine learning technologies.
+
+| Layer | Technology |
+|--------|------------|
+| Frontend | React.js |
+| Backend | FastAPI |
+| Programming Language | Python |
+| Database | PostgreSQL |
+| ORM | SQLAlchemy |
+| Database Migration | Alembic |
+| Authentication | JWT |
+| ML Libraries | Scikit-learn, Pandas, NumPy |
+| API Communication | REST (JSON) |
+| Version Control | Git & GitHub |
+
+The selected technologies provide strong community support, high performance, and seamless integration for building a modern MLOps application.
+
+---
+
+# 4. High-Level System Overview
+
+PhoenixML follows a layered architecture that separates the presentation, business logic, and data persistence layers. This separation improves maintainability, simplifies testing, and promotes code reuse.
+
+The workflow begins when a user interacts with the React-based frontend. Client requests are sent to the FastAPI backend through RESTful APIs. The backend processes the request, executes the required business logic, communicates with the AIMD engine when maintenance decisions are needed, and stores or retrieves information from the PostgreSQL database using SQLAlchemy ORM.
 
 ```mermaid
 flowchart LR
 
-UI[React Frontend]
+User["User"]
 
-API[FastAPI Backend]
+Frontend["React Frontend"]
 
-AUTH[Authentication]
+Backend["FastAPI Backend"]
 
-AIMD[AIMD Decision Engine]
+Services["Business Services"]
 
-MONITOR[Monitoring Engine]
+AIMD["AIMD Decision Engine"]
 
-ML[ML Services]
+Database["PostgreSQL"]
 
-DB[(PostgreSQL)]
+User --> Frontend
 
-UI --> API
+Frontend --> Backend
 
-API --> AUTH
+Backend --> Services
 
-API --> AIMD
+Services --> AIMD
 
-API --> MONITOR
+Services --> Database
 
-API --> ML
+Database --> Services
 
-AUTH --> DB
+Services --> Backend
 
-AIMD --> DB
+Backend --> Frontend
 
-MONITOR --> DB
-
-ML --> DB
+Frontend --> User
 ```
 
----
-
-# 4. Project Structure
-
-```
-PhoenixML/
-
-backend/
-
-frontend/
-
-docs/
-
-docker/
-
-tests/
-
-scripts/
-
-README.md
-```
+The layered architecture isolates business logic from presentation and persistence concerns, making the system easier to maintain and extend.
 
 ---
 
-# 5. Backend Design
+# 5. Design Philosophy
 
-```
-backend/
+The design of PhoenixML is guided by standard software engineering principles.
 
-├── api/
-├── auth/
-├── core/
-├── database/
-├── models/
-├── schemas/
-├── services/
-├── decision_engine/
-├── monitoring/
-├── ml/
-├── utils/
-└── main.py
-```
+- **Separation of Concerns:** Presentation, business logic, and data management are implemented as independent layers.
 
----
+- **Loose Coupling:** Modules communicate through clearly defined interfaces, reducing interdependencies.
 
-## Module Responsibilities
+- **High Cohesion:** Each module focuses on a single responsibility, improving readability and maintainability.
 
-### api/
+- **Human-in-the-Loop Decision Support:** AIMD generates maintenance recommendations, while final deployment decisions remain under user control.
 
-REST API endpoints.
+These principles provide a robust foundation for future enhancements while ensuring that the current implementation remains organized and easy to manage.
 
----
+# 6. Software Architecture
 
-### auth/
+## 6.1 Architectural Overview
 
-- JWT
-- Login
-- Registration
-- Authorization
+PhoenixML follows a **Layered Architecture** to separate the presentation layer, business logic, and data persistence. This architecture improves maintainability, simplifies testing, and allows individual modules to evolve independently.
+
+The system consists of five primary layers:
+
+- Presentation Layer
+- API Layer
+- Business Logic Layer
+- AIMD Decision Layer
+- Data Persistence Layer
+
+Each layer communicates only with adjacent layers, reducing coupling and improving modularity.
 
 ---
 
-### database/
-
-- Database connection
-- Session management
-- Migrations
-
----
-
-### models/
-
-SQLAlchemy ORM models.
-
----
-
-### schemas/
-
-Pydantic request/response models.
-
----
-
-### services/
-
-Business logic.
-
----
-
-### decision_engine/
-
-Implementation of AIMD.
-
----
-
-### monitoring/
-
-Monitoring metric collection.
-
----
-
-### ml/
-
-Machine Learning utilities.
-
----
-
-### utils/
-
-Shared helper functions.
-
----
-
-# 6. Frontend Design
-
-```
-frontend/
-
-src/
-
-components/
-
-pages/
-
-services/
-
-hooks/
-
-contexts/
-
-assets/
-
-utils/
-
-App.tsx
-```
-
----
-
-## Main Pages
-
-- Login
-- Dashboard
-- Models
-- Monitoring
-- Recommendations
-- Decision Logs
-- Settings
-
----
-
-# 7. Component Design
-
-## Authentication Module
-
-Responsibilities
-
-- Register users
-- Login users
-- Generate JWT
-- Validate JWT
-
----
-
-## Model Management Module
-
-Responsibilities
-
-- Register model
-- Update model
-- Delete model
-- View model
-
----
-
-## Monitoring Module
-
-Responsibilities
-
-- Store monitoring metrics
-- Calculate drift
-- Track health
-
----
-
-## AIMD Module
-
-Responsibilities
-
-- Normalize metrics
-- Calculate health score
-- Evaluate context
-- Generate recommendation
-- Generate explanation
-
----
-
-## Dashboard Module
-
-Responsibilities
-
-- Display statistics
-- Show recommendations
-- Visualize monitoring data
-
----
-
-# 8. Class Design
+## 6.2 Layered Architecture
 
 ```mermaid
-classDiagram
+flowchart TB
 
-class User
+Presentation["Presentation Layer<br/>(React.js)"]
 
-class Model
+API["API Layer<br/>(FastAPI)"]
 
-class MonitoringMetric
+Business["Business Logic Layer"]
 
-class DecisionLog
+AIMD["AIMD Decision Engine"]
 
-class AIMDEngine
+Database["PostgreSQL Database"]
 
-User --> Model
+Presentation --> API
 
-Model --> MonitoringMetric
+API --> Business
 
-MonitoringMetric --> AIMDEngine
+Business --> AIMD
 
-AIMDEngine --> DecisionLog
+Business --> Database
 ```
+
+### Layer Responsibilities
+
+| Layer | Responsibility |
+|--------|----------------|
+| Presentation | User interface and interaction |
+| API | Request validation and routing |
+| Business Logic | Executes application workflows |
+| AIMD | Generates maintenance recommendations |
+| Data Persistence | Stores and retrieves application data |
 
 ---
 
-# 9. Database Design
+## 6.3 Component Interaction
 
-Main Tables
+The interaction between major components follows a request-response workflow.
 
-- users
-- models
-- model_versions
-- monitoring_metrics
-- decision_logs
-- training_runs
+```mermaid
+sequenceDiagram
+
+participant User
+participant Frontend
+participant API
+participant Services
+participant AIMD
+participant Database
+
+User->>Frontend: Perform Action
+
+Frontend->>API: HTTP Request
+
+API->>Services: Execute Business Logic
+
+Services->>Database: Read/Write Data
+
+Services->>AIMD: Generate Recommendation
+
+AIMD-->>Services: Decision
+
+Services-->>API: Response
+
+API-->>Frontend: JSON Response
+
+Frontend-->>User: Display Result
+```
+
+This workflow ensures a clear separation between user interaction, application logic, and decision support.
 
 ---
 
-# 10. API Design
+# 7. Project Structure
 
-REST communication.
+PhoenixML is organized into separate frontend and backend components to improve maintainability and simplify development.
 
+```text
+PhoenixML/
+
+├── backend/
+│   ├── api/
+│   ├── auth/
+│   ├── core/
+│   ├── database/
+│   ├── models/
+│   ├── schemas/
+│   ├── repositories/
+│   ├── services/
+│   ├── monitoring/
+│   ├── drift_detection/
+│   ├── health/
+│   ├── aimd/
+│   ├── reports/
+│   └── utils/
+│
+├── frontend/
+│   ├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── services/
+│   └── assets/
+│
+├── docs/
+├── tests/
+├── datasets/
+├── models/
+└── docker/
 ```
-React
+
+This modular directory structure improves code organization and supports independent development of frontend and backend components.
+
+---
+
+# 8. Backend Design
+
+The backend is developed using **FastAPI** and follows a layered structure that separates API routing, business logic, and database operations.
+
+### Backend Workflow
+
+```mermaid
+flowchart LR
+
+Request
 
 ↓
 
-FastAPI
+API Router
 
 ↓
 
-Business Logic
+Business Service
+
+↓
+
+Repository Layer
 
 ↓
 
 Database
 ```
 
+### Backend Responsibilities
+
+- Authenticate users
+- Manage spam detection models
+- Collect monitoring metrics
+- Perform drift analysis
+- Evaluate model health
+- Generate AIMD recommendations
+- Produce reports
+- Handle notifications
+
 ---
 
-# 11. Authentication Flow
+# 9. Frontend Design
+
+The frontend is developed using **React.js** as a Single Page Application (SPA).
+
+It provides an intuitive interface for managing spam detection models, monitoring production performance, reviewing AIMD recommendations, and viewing reports.
+
+### Frontend Modules
+
+- Authentication
+- Dashboard
+- Spam Model Management
+- Monitoring
+- Drift Reports
+- Health Reports
+- Recommendations
+- Reports
+- Notifications
+
+---
+
+## Frontend Component Hierarchy
+
+```mermaid
+flowchart TB
+
+App
+
+App --> Login
+
+App --> Dashboard
+
+Dashboard --> SpamModels
+
+Dashboard --> Monitoring
+
+Dashboard --> DriftReports
+
+Dashboard --> HealthReports
+
+Dashboard --> Recommendations
+
+Dashboard --> Reports
+
+Dashboard --> Notifications
+```
+
+The frontend communicates exclusively with the FastAPI backend through REST APIs, ensuring that business logic remains centralized within the server.
+
+# 10. Module Design
+
+PhoenixML is divided into independent functional modules. Each module is responsible for a specific aspect of the system and collaborates with other modules through well-defined interfaces. This modular approach simplifies development, testing, and future maintenance.
+
+---
+
+## 10.1 Authentication Module
+
+### Purpose
+
+The Authentication Module manages user registration, login, and secure access to PhoenixML. It verifies user identity before allowing access to protected resources.
+
+### Responsibilities
+
+- Register new users
+- Authenticate users
+- Generate and validate JWT tokens
+- Manage user roles and permissions
+
+### Interacts With
+
+- User Database
+- API Layer
+
+---
+
+## 10.2 Spam Model Registry Module
+
+### Purpose
+
+The Spam Model Registry Module manages deployed spam email detection models. It stores model metadata and maintains version information.
+
+### Responsibilities
+
+- Register spam detection models
+- Update model information
+- Maintain deployment status
+- Manage model versions
+
+### Interacts With
+
+- Monitoring Module
+- Database Layer
+
+---
+
+## 10.3 Monitoring Module
+
+### Purpose
+
+The Monitoring Module continuously collects runtime metrics from deployed spam detection models. These metrics are used to evaluate model performance and detect potential degradation.
+
+### Responsibilities
+
+- Collect production metrics
+- Store monitoring history
+- Trigger drift analysis
+- Provide monitoring data for health evaluation
+
+### Interacts With
+
+- Spam Model Registry
+- Drift Detection Module
+- Database Layer
+
+---
+
+## 10.4 Drift Detection Module
+
+### Purpose
+
+The Drift Detection Module analyzes production data to identify changes that may reduce model performance.
+
+It supports both data drift and concept drift analysis.
+
+### Responsibilities
+
+- Calculate drift scores
+- Detect distribution changes
+- Classify drift severity
+- Generate drift reports
+
+### Interacts With
+
+- Monitoring Module
+- Health Assessment Module
+
+---
+
+## 10.5 Health Assessment Module
+
+### Purpose
+
+The Health Assessment Module evaluates the operational condition of each deployed spam detection model using monitoring metrics and drift analysis results.
+
+### Responsibilities
+
+- Calculate health score
+- Assign health status
+- Generate health reports
+- Provide input to AIMD
+
+### Interacts With
+
+- Monitoring Module
+- Drift Detection Module
+- AIMD Engine
+
+---
+
+## 10.6 AIMD Decision Engine
+
+### Purpose
+
+The Adaptive Intelligent Model Decision (AIMD) Engine analyzes the health of deployed models and generates maintenance recommendations to assist ML engineers.
+
+The current implementation uses a rule-based decision policy while allowing future integration of more advanced decision-making techniques.
+
+### Responsibilities
+
+- Analyze model health
+- Generate maintenance recommendations
+- Assign recommendation priority
+- Provide decision explanations
+
+### Recommendation Workflow
+
+```mermaid
+flowchart LR
+
+Monitoring --> Drift
+
+Drift --> Health
+
+Health --> AIMD
+
+AIMD --> Recommendation
+```
+
+---
+
+## 10.7 Dashboard Module
+
+### Purpose
+
+The Dashboard Module presents a consolidated overview of system activity and model performance.
+
+### Responsibilities
+
+- Display registered models
+- Display monitoring statistics
+- Display health summaries
+- Display recent recommendations
+- Display notifications
+
+---
+
+## 10.8 Reporting Module
+
+### Purpose
+
+The Reporting Module generates reports that summarize monitoring results, drift analysis, health assessments, and maintenance recommendations.
+
+### Responsibilities
+
+- Generate monitoring reports
+- Generate health reports
+- Generate recommendation summaries
+- Export reports
+
+---
+
+## 10.9 Notification Module
+
+### Purpose
+
+The Notification Module informs users about significant events that require attention.
+
+### Responsibilities
+
+- Generate alerts
+- Store notifications
+- Track notification status
+
+Examples include:
+
+- High drift detected
+- Critical model health
+- Recommendation generated
+- System notifications
+
+---
+
+# 11. Module Interaction
+
+The following diagram illustrates the interaction between the major functional modules.
+
+```mermaid
+flowchart LR
+
+Authentication --> SpamRegistry
+
+SpamRegistry --> Monitoring
+
+Monitoring --> Drift
+
+Drift --> Health
+
+Health --> AIMD
+
+AIMD --> Dashboard
+
+AIMD --> Reports
+
+Dashboard --> Notifications
+```
+
+The modular design ensures that each component performs a clearly defined responsibility while collaborating efficiently with related modules. This structure improves maintainability, simplifies testing, and supports future expansion of the PhoenixML framework.
+
+# 12. Database Design Overview
+
+## 12.1 Overview
+
+PhoenixML uses **PostgreSQL** as its primary relational database and **SQLAlchemy ORM** for database interaction. The database is designed to store application data reliably while maintaining integrity, consistency, and efficient retrieval.
+
+The database supports all major system modules, including authentication, spam model management, production monitoring, drift analysis, health assessment, AIMD recommendations, and notifications.
+
+Detailed schema definitions, table specifications, constraints, indexes, and normalization are documented separately in the **Database Design Document**.
+
+---
+
+## 12.2 Core Database Entities
+
+The primary entities maintained by PhoenixML are:
+
+- Users
+- Spam Models
+- Model Versions
+- Monitoring Metrics
+- Drift Reports
+- Health Reports
+- Recommendations
+- Recommendation History
+- Notifications
+
+These entities collectively support the complete lifecycle of deployed spam detection models.
+
+---
+
+## 12.3 Entity Relationship Overview
+
+```mermaid
+erDiagram
+
+USERS ||--o{ SPAM_MODELS : owns
+
+SPAM_MODELS ||--o{ MODEL_VERSIONS : has
+
+SPAM_MODELS ||--o{ MONITORING_METRICS : generates
+
+SPAM_MODELS ||--o{ DRIFT_REPORTS : produces
+
+SPAM_MODELS ||--o{ HEALTH_REPORTS : evaluates
+
+HEALTH_REPORTS ||--o{ RECOMMENDATIONS : generates
+
+RECOMMENDATIONS ||--o{ RECOMMENDATION_HISTORY : records
+
+USERS ||--o{ NOTIFICATIONS : receives
+```
+
+---
+
+# 13. API Design Overview
+
+## 13.1 Overview
+
+PhoenixML exposes RESTful APIs through **FastAPI** to enable communication between the React frontend and the backend services.
+
+The API layer validates incoming requests, invokes business logic, interacts with the database, and returns standardized JSON responses to the client.
+
+Detailed endpoint specifications, request/response formats, authentication requirements, and status codes are documented in the **API Design Document**.
+
+---
+
+## 13.2 Functional API Groups
+
+The APIs are organized into the following functional groups:
+
+| API Group | Purpose |
+|-----------|---------|
+| Authentication | User registration and login |
+| Spam Models | Manage deployed models |
+| Monitoring | Store and retrieve monitoring metrics |
+| Drift Reports | Access drift analysis results |
+| Health Reports | Retrieve model health information |
+| Recommendations | Generate and manage AIMD recommendations |
+| Dashboard | Display system overview |
+| Reports | Generate monitoring reports |
+| Notifications | Manage user alerts |
+
+---
+
+## 13.3 API Communication Flow
 
 ```mermaid
 sequenceDiagram
 
-User->>Frontend: Login
+participant User
+participant React
+participant FastAPI
+participant Services
+participant PostgreSQL
 
-Frontend->>Backend: Credentials
+User->>React: User Action
 
-Backend->>Database: Verify User
+React->>FastAPI: HTTP Request
 
-Database-->>Backend: Valid
+FastAPI->>Services: Execute Business Logic
 
-Backend-->>Frontend: JWT Token
+Services->>PostgreSQL: Read / Write Data
 
-Frontend-->>User: Dashboard
+PostgreSQL-->>Services: Response
+
+Services-->>FastAPI: JSON Response
+
+FastAPI-->>React: Display Result
 ```
 
 ---
 
-# 12. AIMD Design
+# 14. Security Design
 
-```mermaid
-flowchart TD
+## 14.1 Security Overview
 
-Metrics
+Security is incorporated throughout PhoenixML to protect user accounts, model information, and monitoring data.
 
-↓
-
-Normalize
-
-↓
-
-Health Score
-
-↓
-
-Context Evaluation
-
-↓
-
-Decision Matrix
-
-↓
-
-Recommendation
-
-↓
-
-Explanation
-```
+The system implements authentication, authorization, input validation, and secure communication to ensure that only authorized users can access protected resources.
 
 ---
 
-## AIMD Algorithm
+## 14.2 Authentication
 
-1. Collect monitoring metrics.
-2. Normalize values.
-3. Calculate health score.
-4. Evaluate operational context.
-5. Determine recommendation.
-6. Generate explanation.
-7. Store decision log.
-8. Return response.
+PhoenixML uses **JSON Web Tokens (JWT)** for user authentication.
+
+After successful login, users receive an access token that must accompany requests to protected API endpoints.
 
 ---
 
-# 13. Error Handling
+## 14.3 Authorization
 
-The system shall handle:
+Access to system resources is controlled using **Role-Based Access Control (RBAC)**.
 
-- Invalid authentication
-- Missing data
-- Database failure
-- API exceptions
-- Invalid requests
+Supported roles include:
 
-Standard JSON error responses shall be returned.
+- Administrator
+- ML Engineer
+- Viewer
+
+Each role is granted permissions appropriate to its responsibilities.
 
 ---
 
-# 14. Logging
+## 14.4 Input Validation
 
-Logs include:
+All client requests are validated before processing.
 
-- User activity
-- Authentication
-- API requests
-- Monitoring events
-- AIMD decisions
+Validation includes:
+
+- Required fields
+- Data types
+- Value ranges
+- Input formats
+
+Invalid requests return standardized error responses without exposing internal implementation details.
+
+---
+
+# 15. Logging and Configuration
+
+## 15.1 Logging
+
+PhoenixML records important system events to support monitoring, debugging, and auditing.
+
+Examples include:
+
+- User authentication
+- Model registration
+- Monitoring execution
+- Drift detection
+- AIMD recommendation generation
 - System errors
 
 ---
 
-# 15. Configuration
+## 15.2 Configuration
 
-Configuration values include:
+Application settings are managed using environment variables.
 
-- Database URL
-- JWT Secret
-- Token Expiry
-- Health Score Weights
-- Drift Threshold
-- Logging Level
+Configuration categories include:
 
-Configuration will be stored in environment variables.
+- Database connection
+- JWT settings
+- Logging configuration
+- Monitoring thresholds
+- Drift thresholds
 
----
+This approach simplifies deployment across development, testing, and production environments.
 
 # 16. Design Patterns
 
-PhoenixML uses:
+PhoenixML incorporates well-established software engineering design patterns to improve code organization, maintainability, and future extensibility.
 
-- Layered Architecture
-- Repository Pattern
-- Dependency Injection
-- Service Layer
-- Factory Pattern (future)
+## 16.1 Layered Architecture
+
+The system follows a layered architecture that separates the presentation, business logic, and data persistence layers. This separation improves maintainability and simplifies testing by assigning each layer a distinct responsibility.
 
 ---
 
-# 17. Security Design
+## 16.2 Repository Pattern
 
-Security measures include:
-
-- JWT Authentication
-- Password hashing
-- Input validation
-- SQL injection prevention
-- HTTPS deployment
-- Role-based authorization
+The Repository Pattern abstracts database operations from business logic. Instead of interacting directly with the database, service modules access data through repository classes, making the code easier to maintain and test.
 
 ---
 
-# 18. Future Design Improvements
+## 16.3 Service Layer Pattern
 
-Future versions may introduce:
-
-- Microservices
-- Kubernetes
-- Event-driven architecture
-- Message queues
-- Reinforcement Learning policy engine
+Business rules and application workflows are implemented within service classes. This approach keeps API controllers lightweight and separates request handling from business logic.
 
 ---
 
-# 19. Conclusion
+## 16.4 Dependency Injection
 
-The Software Design Document defines the internal architecture of PhoenixML. By separating responsibilities into independent modules, the design supports maintainability, scalability, and explainable decision making. The AIMD Framework remains the central component, coordinating monitoring data and generating transparent maintenance recommendations while integrating with existing MLOps workflows.
+FastAPI's dependency injection mechanism is used to provide services such as database sessions, authentication, and repositories. This reduces coupling between components and improves testability.
+
+---
+
+## 16.5 Future Design Extensions
+
+The architecture has been designed to support future enhancements with minimal structural changes. Possible extensions include:
+
+- Automatic model retraining
+- Champion–Challenger model evaluation
+- MLflow integration
+- Multi-model monitoring
+- Support for additional machine learning domains
+- Docker and Kubernetes deployment
+
+---
+
+# 17. Advantages of the Proposed Design
+
+The proposed architecture offers several benefits:
+
+- Modular and easy-to-maintain software structure.
+- Clear separation between presentation, business logic, and data layers.
+- Scalable architecture suitable for future enhancements.
+- Secure authentication and authorization mechanisms.
+- Independent modules that simplify testing and maintenance.
+- Support for intelligent maintenance of deployed spam detection models through the AIMD framework.
+
+These characteristics make PhoenixML suitable for both academic implementation and future real-world expansion.
+
+---
+
+# 18. Conclusion
+
+This Software Design Document presents the architectural design of **PhoenixML – An Intelligent MLOps Decision Support Framework for Spam Email Detection**.
+
+The system is organized into modular components responsible for authentication, spam model management, monitoring, drift detection, health assessment, recommendation generation, reporting, and notifications. A layered architecture, combined with modern technologies such as React, FastAPI, PostgreSQL, and SQLAlchemy, provides a scalable and maintainable foundation for the application.
+
+The design supports the complete lifecycle of deployed spam detection models by enabling continuous monitoring, intelligent maintenance recommendations, and human-assisted decision making. Its modular structure also allows future enhancements without requiring major architectural changes.
+
+---
+
+# References
+
+1. IEEE Std 1016-2009 – IEEE Standard for Software Design Descriptions
+2. ISO/IEC/IEEE 12207 – Systems and Software Engineering
+3. FastAPI Documentation
+4. PostgreSQL Documentation
+5. SQLAlchemy Documentation
+6. React Documentation
+7. Scikit-learn Documentation

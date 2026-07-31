@@ -1,391 +1,429 @@
-# AIMD Framework: Adaptive Intelligent Model Decision
+# Adaptive Intelligent Model Decision (AIMD) Engine
 
-**Project:** PhoenixML  
-**Document Version:** 1.0  
-**Last Updated:** July 2026
+**Project:** PhoenixML – An Intelligent MLOps Decision Support Framework for Spam Email Detection
+
+**Version:** 2.0
+
+**Prepared By:** Shailendra Singh Rathore
+
+**Document Type:** Decision Engine Design Document
+
+---
+
+# Revision History
+
+| Version | Date | Author | Description |
+|---------|------|--------|-------------|
+| 1.0 | XX/XX/2026 | Shailendra Singh Rathore | Initial Decision Engine Document |
+| 2.0 | XX/XX/2026 | Shailendra Singh Rathore | Updated AIMD framework for PhoenixML |
+
+---
+
+# Table of Contents
+
+1. Introduction
+2. Objectives
+3. AIMD Overview
+4. Decision-Making Philosophy
+5. High-Level Decision Workflow
 
 ---
 
 # 1. Introduction
 
-Machine Learning models deployed in production are continuously exposed to changing data, evolving user behavior, infrastructure failures, and concept drift. Although modern MLOps platforms provide monitoring, experiment tracking, deployment, and version management, they generally depend on engineers to interpret monitoring results and decide the appropriate maintenance action.
+## 1.1 Purpose
 
-PhoenixML introduces the **Adaptive Intelligent Model Decision (AIMD)** Framework—an explainable decision-support framework that analyzes multiple operational signals and recommends suitable maintenance actions. AIMD complements existing MLOps platforms by assisting engineers rather than replacing them.
+This document describes the design of the **Adaptive Intelligent Model Decision (AIMD) Engine**, the core decision-support component of **PhoenixML – An Intelligent MLOps Decision Support Framework for Spam Email Detection**.
 
----
+The AIMD Engine analyzes monitoring metrics, drift detection results, and model health assessments to generate intelligent maintenance recommendations for deployed spam email detection models. Rather than automatically modifying deployed models, AIMD follows a **human-in-the-loop** approach where recommendations are reviewed and approved by authorized users before any maintenance action is taken.
 
-# 2. Design Goals
-
-The AIMD Framework is designed according to the following principles:
-
-- Explainable decision making
-- Multi-signal health assessment
-- Context-aware recommendations
-- Human-in-the-loop approval
-- Easy integration with existing MLOps platforms
-- Extensible architecture for future enhancements
+This document explains the decision-making process, workflow, recommendation strategy, and design principles of the AIMD Engine.
 
 ---
 
-# 3. Core Concepts
+## 1.2 Scope
 
-The AIMD framework follows five sequential stages:
+This document focuses on the internal decision-support process of AIMD, including:
 
-1. Collect Monitoring Signals
-2. Assess Model Health
-3. Evaluate Operational Context
-4. Recommend Maintenance Action
-5. Explain the Recommendation
+- Decision inputs
+- Decision evaluation
+- Recommendation generation
+- Recommendation prioritization
+- Human approval workflow
+- Future enhancements
 
-Unlike traditional monitoring systems, AIMD separates **monitoring** from **decision making**, enabling engineers to understand why a recommendation was generated.
+Implementation details of the software architecture, database schema, and API endpoints are covered in their respective design documents.
 
 ---
 
-# 4. Framework Architecture
+# 2. Objectives
+
+The AIMD Engine has been designed with the following objectives:
+
+### Intelligent Decision Support
+
+Provide meaningful maintenance recommendations based on model performance and health rather than relying solely on manual analysis.
+
+### Early Detection
+
+Identify model degradation before it significantly impacts spam email classification performance.
+
+### Explainability
+
+Generate recommendations together with clear reasoning so that users understand why a particular action is suggested.
+
+### Human Oversight
+
+Ensure that all maintenance actions require explicit user approval, preventing unintended automated modifications.
+
+### Extensibility
+
+Support future integration of advanced decision-making techniques, including machine learning, reinforcement learning, and predictive analytics.
+
+---
+
+# 3. AIMD Overview
+
+The Adaptive Intelligent Model Decision (AIMD) Engine acts as the intelligence layer of PhoenixML.
+
+It receives monitoring metrics, drift reports, and health assessments from other system components. These inputs are evaluated using predefined decision rules to determine whether maintenance actions are necessary. Based on this evaluation, the engine generates recommendations such as continued monitoring, threshold adjustment, model retraining, or model replacement.
+
+The current implementation uses a **rule-based decision strategy**, providing a transparent and explainable decision process suitable for academic implementation. The modular design also allows future replacement or extension of the rule-based logic with more advanced AI-driven decision models.
+
+---
+
+# 4. Decision-Making Philosophy
+
+The AIMD Engine is guided by the following principles.
+
+### Evidence-Based Decisions
+
+Recommendations are generated only after evaluating measurable indicators such as monitoring metrics, drift scores, and health assessments.
+
+### Explainable Recommendations
+
+Every recommendation includes the reasoning behind the suggested action, allowing users to understand the factors influencing the decision.
+
+### Human-in-the-Loop
+
+The AIMD Engine does not perform maintenance actions automatically. Instead, it assists ML engineers by providing recommendations that require manual review and approval.
+
+### Progressive Maintenance
+
+Maintenance actions are selected according to the severity of the detected issues. Minor problems may require only continued monitoring, while severe degradation may warrant model retraining or replacement.
+
+---
+
+# 5. High-Level Decision Workflow
+
+The AIMD Engine processes information through a sequence of evaluation stages.
 
 ```mermaid
 flowchart LR
 
-A[Monitoring Signals]
-B[Metric Normalization]
+A[Monitoring Metrics]
+--> B[Drift Analysis]
+--> C[Health Assessment]
+--> D[AIMD Decision Engine]
+--> E[Generate Recommendation]
+--> F[User Review]
+--> G[Approve or Reject]
+```
+
+The workflow begins with operational monitoring of the deployed spam detection model. Monitoring results are analyzed for data and concept drift, followed by health assessment. The AIMD Engine evaluates these inputs and generates an appropriate maintenance recommendation. The final decision remains under the control of the authorized user, ensuring transparency and accountability.
+
+# 6. Decision Inputs
+
+The AIMD Engine generates recommendations by analyzing information collected from multiple components of PhoenixML. Rather than relying on a single metric, the engine evaluates several indicators to obtain a comprehensive understanding of the operational state of each deployed spam email detection model.
+
+The primary decision inputs are:
+
+- Monitoring Metrics
+- Drift Reports
+- Health Assessment Results
+
+Each input contributes to the overall evaluation process and influences the final recommendation.
+
+---
+
+## 6.1 Monitoring Metrics
+
+Monitoring metrics provide information about the runtime performance of the deployed spam detection model.
+
+Typical metrics include:
+
+- Accuracy
+- Precision
+- Recall
+- F1-Score
+
+These metrics help determine whether the model continues to perform within acceptable operational thresholds.
+
+---
+
+## 6.2 Drift Reports
+
+The Drift Detection component identifies changes in production data that may affect model performance.
+
+The AIMD Engine evaluates two forms of drift:
+
+- **Data Drift** – Changes in the statistical distribution of input features.
+- **Concept Drift** – Changes in the relationship between inputs and expected outputs.
+
+Higher drift scores indicate an increased likelihood that the deployed model requires maintenance.
+
+---
+
+## 6.3 Health Assessment
+
+The Health Assessment component combines monitoring metrics and drift analysis to generate an overall health score.
+
+Health status is categorized as:
+
+| Health Status | Description |
+|---------------|-------------|
+| Healthy | Model is performing within acceptable limits |
+| Warning | Performance degradation detected |
+| Critical | Significant degradation requiring immediate attention |
+
+The health assessment serves as the primary indicator used by the AIMD Engine during decision making.
+
+---
+
+# 7. Decision Logic
+
+The AIMD Engine follows a **rule-based decision strategy**. It evaluates the health status of the deployed model together with monitoring metrics and drift reports to determine the most appropriate maintenance recommendation.
+
+The decision process follows three stages:
+
+1. Evaluate monitoring metrics.
+2. Analyze drift severity.
+3. Assess overall model health.
+4. Generate a recommendation based on predefined decision rules.
+
+---
+
+## 7.1 Decision Workflow
+
+```mermaid
+flowchart TD
+
+A[Monitoring Metrics]
+
+B[Drift Reports]
+
 C[Health Assessment]
-D[Context Evaluation]
-E[Decision Engine]
-F[Explainability Engine]
-G[Recommended Action]
-H[Decision Log]
 
-A --> B
-B --> C
+D[Decision Rule Evaluation]
+
+E[Generate Recommendation]
+
+A --> D
+
+B --> D
+
 C --> D
+
 D --> E
-E --> F
-F --> G
-G --> H
 ```
 
----
-
-# 5. Monitoring Signals
-
-The framework evaluates multiple operational metrics simultaneously.
-
-| Signal | Description |
-|---------|-------------|
-| Model Accuracy | Current production accuracy |
-| Drift Score | Degree of data or concept drift |
-| Prediction Confidence | Average prediction confidence |
-| Data Quality | Missing values, invalid records, outliers |
-| System Health | CPU usage, memory, latency, failures |
-| Maintenance History | Previous retraining and deployments |
-| Business Rules | Organization-specific constraints |
+The workflow ensures that recommendations are based on multiple sources of evidence rather than a single performance metric.
 
 ---
 
-# 6. Metric Normalization
+# 8. Recommendation Strategy
 
-Since monitoring metrics have different scales, they are normalized to a common range (0–100) before evaluation.
+The AIMD Engine recommends maintenance actions according to the severity of the detected issues.
 
-Example:
+| Health Status | Drift Severity | Recommended Action |
+|---------------|---------------|--------------------|
+| Healthy | Low | Continue Monitoring |
+| Healthy | Medium | Increase Monitoring Frequency |
+| Warning | Medium | Review Model Performance |
+| Warning | High | Retrain Model |
+| Critical | High | Replace or Redeploy Model |
 
-| Metric | Original Value | Normalized |
-|---------|---------------:|-----------:|
-| Accuracy | 92% | 92 |
-| Drift Score | 0.24 | 76 |
-| Confidence | 0.89 | 89 |
-| Data Quality | 97% | 97 |
-| System Health | 94% | 94 |
-
----
-
-# 7. Health Assessment
-
-The overall model health is calculated using a weighted score.
-
-## Health Score Formula
-
-```
-Health Score =
-0.30 × Accuracy
-+
-0.25 × (100 − Drift Score)
-+
-0.15 × Confidence
-+
-0.15 × Data Quality
-+
-0.15 × System Health
-```
-
-## Health Classification
-
-| Score | Status |
-|-------:|--------|
-| 90–100 | Excellent |
-| 75–89 | Healthy |
-| 60–74 | Warning |
-| 40–59 | Poor |
-| Below 40 | Critical |
+The recommendation strategy provides a structured approach for responding to different operational conditions.
 
 ---
 
-# 8. Context Evaluation
+# 9. Recommendation Priority
 
-Before recommending any maintenance action, AIMD evaluates contextual information such as:
+To assist users in identifying the urgency of maintenance activities, each recommendation is assigned a priority level.
 
-- Recent retraining history
-- Availability of labeled data
-- Temporary vs persistent drift
-- Business KPI status
-- Infrastructure stability
-- Maintenance frequency
+| Priority | Meaning |
+|----------|---------|
+| Low | Informational recommendation |
+| Medium | Maintenance should be scheduled |
+| High | Immediate attention required |
 
-This prevents unnecessary maintenance operations.
-
----
-
-# 9. Decision Matrix
-
-The decision engine maps the evaluated health status to an appropriate recommendation.
-
-| Health | Drift | Confidence | Recommended Action |
-|---------|--------|------------|-------------------|
-| Excellent | Low | High | Continue Monitoring |
-| Healthy | Low | High | Continue Monitoring |
-| Warning | Medium | High | Increase Monitoring |
-| Warning | High | Medium | Collect More Data |
-| Poor | High | Medium | Train Candidate Model |
-| Poor | High | Low | Champion–Challenger Evaluation |
-| Critical | High | Low | Rollback |
-| Unknown | Any | Any | Human Review |
+Priority levels enable users to focus on the most critical maintenance tasks first.
 
 ---
 
-# 10. Decision Algorithm
+# 10. Explainable Decision Support
 
-```text
-Input Monitoring Metrics
+A key objective of the AIMD Engine is to ensure that every recommendation is transparent and understandable.
 
-↓
+Instead of presenting only a maintenance action, the engine also provides the reasoning behind the recommendation.
 
-Normalize Metrics
+### Example
 
-↓
+| Evaluation Result | Recommendation |
+|-------------------|---------------|
+| Accuracy decreased and high data drift detected | Retrain the model |
+| Stable performance with low drift | Continue monitoring |
+| Critical health score and severe concept drift | Replace deployed model |
 
-Calculate Health Score
+Providing explanations improves user confidence and supports informed decision-making during model maintenance.
 
-↓
+# 11. Complete Decision Workflow
 
-Evaluate Operational Context
+The AIMD Engine operates as the intelligence layer of PhoenixML by transforming monitoring information into actionable maintenance recommendations.
 
-↓
+The complete decision-making process consists of the following stages:
 
-Lookup Decision Matrix
+1. Collect monitoring metrics from deployed spam email detection models.
+2. Detect data drift and concept drift.
+3. Evaluate the overall health of the deployed model.
+4. Apply predefined decision rules.
+5. Generate an appropriate maintenance recommendation.
+6. Assign a recommendation priority.
+7. Provide an explanation for the recommendation.
+8. Present the recommendation to the user for review.
+9. Record the user's decision for future reference.
 
-↓
-
-Generate Recommendation
-
-↓
-
-Generate Explanation
-
-↓
-
-Return Decision
-```
-
----
-
-# 11. Explainability Engine
-
-Every recommendation includes an explanation.
-
-Example:
-
-```json
-{
-  "recommended_action": "Train Candidate Model",
-
-  "health_score": 58,
-
-  "confidence": 91,
-
-  "reasons": [
-    "Accuracy dropped below threshold",
-    "High concept drift detected",
-    "Prediction confidence decreased",
-    "No recent retraining performed"
-  ]
-}
-```
-
-This enables engineers to understand why the recommendation was generated.
+This structured workflow ensures that recommendations are generated consistently while maintaining transparency throughout the decision-making process.
 
 ---
 
-# 12. Recommendation Workflow
+## 11.1 Decision Flow Diagram
 
 ```mermaid
 flowchart TD
 
 A[Collect Monitoring Metrics]
-B[Normalize Metrics]
-C[Calculate Health Score]
-D[Evaluate Context]
-E[Decision Matrix]
-F[Generate Explanation]
-G[Recommend Action]
+
+B[Analyze Data Drift]
+
+C[Analyze Concept Drift]
+
+D[Evaluate Model Health]
+
+E[Apply AIMD Decision Rules]
+
+F[Generate Recommendation]
+
+G[Assign Priority]
+
+H[Generate Explanation]
+
+I[User Review]
+
+J[Approve or Reject]
 
 A --> B
-B --> C
+
+A --> C
+
+B --> D
+
 C --> D
+
 D --> E
+
 E --> F
+
 F --> G
+
+G --> H
+
+H --> I
+
+I --> J
 ```
+
+The workflow illustrates how multiple evaluation stages contribute to a final recommendation while ensuring that all maintenance decisions remain under human supervision.
 
 ---
 
-# 13. Database Schema
+# 12. Human-in-the-Loop Decision Process
 
-Suggested table:
+PhoenixML follows a **human-in-the-loop** decision-making model.
 
-```sql
-DecisionLog
+Instead of automatically executing maintenance actions, the AIMD Engine serves as an intelligent assistant that supports ML engineers by providing evidence-based recommendations.
 
---------------------------------------
+The decision process follows these principles:
 
-id
+- Recommendations are generated automatically.
+- Explanations accompany every recommendation.
+- Users review the suggested action.
+- Users approve or reject the recommendation.
+- Approved decisions are recorded in recommendation history.
 
-model_id
-
-timestamp
-
-accuracy
-
-drift_score
-
-confidence
-
-health_score
-
-recommended_action
-
-reason
-
-approved_by
-
-executed
-
-execution_time
-```
-
-This table stores every recommendation generated by AIMD.
+This approach balances automation with human expertise, reducing operational risk while preserving user control.
 
 ---
 
-# 14. API Design
+# 13. Future Evolution of AIMD
 
-## Evaluate Model
+The current implementation of the AIMD Engine is based on predefined decision rules. This approach provides transparency, ease of implementation, and explainable recommendations suitable for an academic project.
 
-```
-POST /decision/evaluate
-```
+Future versions of PhoenixML may extend the decision engine with more advanced capabilities, including:
 
-Example Request
+- Machine learning–based recommendation models.
+- Reinforcement learning for adaptive decision policies.
+- Predictive maintenance using historical monitoring trends.
+- Integration with MLflow and other MLOps platforms.
+- Automated recommendation confidence scoring.
+- Multi-model decision support for large-scale deployments.
 
-```json
-{
-  "accuracy": 84,
-  "drift_score": 72,
-  "confidence": 81,
-  "data_quality": 95,
-  "system_health": 90
-}
-```
-
-Example Response
-
-```json
-{
-  "recommended_action": "Train Candidate Model",
-  "health_score": 61,
-  "status": "Warning",
-  "confidence": 89,
-  "reason": [
-    "Accuracy below threshold",
-    "High drift detected"
-  ]
-}
-```
+The modular design of AIMD allows these enhancements to be incorporated without fundamentally changing the surrounding system architecture.
 
 ---
 
-# 15. Example Scenario
+# 14. Advantages of the AIMD Engine
 
-Suppose:
+The Adaptive Intelligent Model Decision Engine offers several benefits for maintaining deployed machine learning models.
 
-- Accuracy = 84%
-- Drift Score = High
-- Confidence = Low
-- Data Quality = Good
-- No recent retraining
+### Intelligent Decision Support
 
-AIMD Recommendation:
+Transforms monitoring data into actionable maintenance recommendations.
 
-```
-Train Candidate Model
-```
+### Explainability
 
-Reason:
+Provides clear reasoning behind every recommendation, improving user understanding and trust.
 
-- Accuracy degradation observed
-- High concept drift
-- No recent retraining
-- Data quality remains acceptable
+### Human Oversight
 
----
+Ensures that maintenance actions are reviewed and approved before implementation.
 
-# 16. Advantages
+### Modularity
 
-The AIMD framework offers several benefits:
+Operates independently from monitoring, database, and user interface components, allowing future improvements without affecting the overall system.
 
-- Explainable recommendations
-- Multi-signal decision making
-- Reduced manual effort
-- Better maintenance consistency
-- Human oversight
-- Easy integration with existing MLOps platforms
-- Extensible architecture
+### Extensibility
+
+Supports future integration of AI-driven decision-making techniques while preserving compatibility with the existing architecture.
 
 ---
 
-# 17. Limitations
+# 15. Conclusion
 
-Current implementation has the following limitations:
+The Adaptive Intelligent Model Decision (AIMD) Engine is the core intelligence component of **PhoenixML – An Intelligent MLOps Decision Support Framework for Spam Email Detection**.
 
-- Rule-based decision engine
-- Fixed decision thresholds
-- Depends on monitoring quality
-- Human approval required before deployment
+By combining monitoring metrics, drift analysis, and health assessments, the AIMD Engine generates transparent, evidence-based maintenance recommendations that assist users in maintaining the performance and reliability of deployed spam email detection models.
 
----
-
-# 18. Future Enhancements
-
-Future versions may include:
-
-- Reinforcement Learning–based decision policies
-- Adaptive threshold optimization
-- Cost-aware maintenance planning
-- Federated ML support
-- Kubernetes integration
-- Kubeflow integration
-- Multi-model optimization
+The current rule-based implementation provides a practical and explainable decision-support mechanism suitable for academic use, while the modular architecture enables future enhancements using advanced machine learning and predictive analytics techniques.
 
 ---
 
-# 19. Conclusion
+# References
 
-The Adaptive Intelligent Model Decision (AIMD) Framework is the core innovation of PhoenixML. By combining monitoring metrics, health assessment, contextual analysis, and explainable decision logic, AIMD provides intelligent maintenance recommendations for production machine learning systems. Rather than replacing existing MLOps platforms, it complements them by improving transparency, consistency, and decision quality during model maintenance.
+1. Google. *Rules of Machine Learning: Best Practices for ML Engineering.*
+2. Sculley, D., et al. *Hidden Technical Debt in Machine Learning Systems.*
+3. Breck, E., et al. *The ML Test Score: A Rubric for ML Production Readiness.*
+4. IEEE Std 1016-2009 – IEEE Standard for Software Design Descriptions.
+5. ISO/IEC/IEEE 12207 – Systems and Software Engineering.
+6. Scikit-learn Documentation.
+7. MLflow Documentation.
