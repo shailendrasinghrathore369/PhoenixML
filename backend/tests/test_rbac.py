@@ -9,22 +9,22 @@ from app.auth.security import create_access_token, get_password_hash
 from tests.conftest import TestingSessionLocal
 
 # Temporary router attached to the main app specifically for this test file
-test_router = APIRouter(prefix="/test-rbac")
+rbac_test_router = APIRouter(prefix="/test-rbac")
 
-@test_router.get("/admin-only")
+@rbac_test_router.get("/admin-only")
 def admin_only(user: User = Depends(require_roles(UserRole.ADMIN))):
     return {"message": f"Welcome Admin {user.username}"}
 
-@test_router.get("/admin-and-ml")
+@rbac_test_router.get("/admin-and-ml")
 def admin_and_ml(user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ML_ENGINEER))):
     return {"message": f"Welcome {user.role} {user.username}"}
 
-@test_router.get("/viewer-only")
+@rbac_test_router.get("/viewer-only")
 def viewer_only(user: User = Depends(require_roles(UserRole.VIEWER))):
     return {"message": f"Welcome Viewer {user.username}"}
 
 # Attach router
-app.include_router(test_router)
+app.include_router(rbac_test_router)
 
 # Provide a client
 client = TestClient(app)

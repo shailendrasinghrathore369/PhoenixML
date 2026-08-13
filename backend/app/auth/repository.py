@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.users.models import User
 from app.auth.schemas import UserCreate
-from app.auth.security import get_password_hash
+
 from typing import Optional
 from datetime import datetime
 
@@ -18,12 +18,12 @@ class UserRepository:
     def get_user_by_id(self, user_id: str) -> Optional[User]:
         return self.db.query(User).filter(User.id == user_id).first()
 
-    def create_user(self, user_in: UserCreate) -> User:
+    def create_user(self, user_in: UserCreate, hashed_password: str) -> User:
         db_user = User(
             full_name=user_in.full_name,
             username=user_in.username,
             email=user_in.email,
-            hashed_password=get_password_hash(user_in.password),
+            hashed_password=hashed_password,
         )
         self.db.add(db_user)
         self.db.commit()

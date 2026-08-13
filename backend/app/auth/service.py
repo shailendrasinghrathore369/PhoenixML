@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.auth.repository import UserRepository
 from app.auth.schemas import UserCreate, UserResponse, Token, RefreshTokenRequest, AccessTokenResponse
 from app.db.dependencies import get_db
-from app.auth.security import verify_password, create_access_token, create_refresh_token, decode_token
+from app.auth.security import get_password_hash, verify_password, create_access_token, create_refresh_token, decode_token
 from app.auth.exceptions import AuthenticationError, InactiveUserError, InvalidTokenError, ExpiredTokenError
 from datetime import datetime, timezone
 
@@ -23,7 +23,8 @@ class AuthService:
                 detail="Email already registered"
             )
         
-        user = self.repo.create_user(user_in)
+        hashed_password = get_password_hash(user_in.password)
+        user = self.repo.create_user(user_in, hashed_password)
         return {
             "message": "User registered successfully",
             "user": user
