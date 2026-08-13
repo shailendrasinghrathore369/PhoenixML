@@ -45,3 +45,12 @@ class UserRead(UserInDBBase):
 
 class UserInDB(UserInDBBase):
     hashed_password: str
+
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str] = Field(None, max_length=255)
+    email: Optional[EmailStr] = None
+    username: Optional[str] = Field(None, max_length=255)
+
+class UserPasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8)
