@@ -116,3 +116,27 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-08-13 22:07:18,107 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
 2026-08-13 22:07:18,126 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
 2026-08-13 22:07:18,130 - app.main - INFO - Shutting down PhoenixML backend...
+2026-08-13 22:12:24,202 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-08-13 22:12:24,207 - app.main - INFO - Starting up PhoenixML backend...
+2026-08-13 22:12:24,288 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-08-13 22:12:24,288 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-08-13 22:12:24,720 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-13 22:12:25,137 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-13 22:12:25,141 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-08-13 22:12:25,530 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-13 22:12:25,535 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-08-13 22:12:25,545 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-08-13 22:12:25,556 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-08-13 22:12:25,558 - app.main - INFO - Shutting down PhoenixML backend...
+2026-08-13 22:13:15,230 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-08-13 22:13:15,244 - app.main - INFO - Starting up PhoenixML backend...
+2026-08-13 22:13:15,308 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-08-13 22:13:15,309 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-08-13 22:13:15,712 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-13 22:13:16,504 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-13 22:13:16,510 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-08-13 22:13:16,987 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-13 22:13:16,994 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-08-13 22:13:17,018 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-08-13 22:13:17,035 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-08-13 22:13:17,039 - app.main - INFO - Shutting down PhoenixML backend...

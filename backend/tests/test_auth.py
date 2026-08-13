@@ -1,5 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
+from app.users.models import User
+from tests.conftest import TestingSessionLocal
+from app.auth.security import verify_password
 
 def test_successful_registration(client: TestClient):
     response = client.post("/api/auth/register", json={
@@ -18,6 +21,16 @@ def test_successful_registration(client: TestClient):
     assert "id" in data["user"]
     assert "password" not in data["user"]
     assert "hashed_password" not in data["user"]
+
+    # Verify database state
+    db = TestingSessionLocal()
+    try:
+        user_in_db = db.query(User).filter(User.username == "testuser").first()
+        assert user_in_db is not None
+        assert user_in_db.hashed_password != "strongpassword123"
+        assert verify_password("strongpassword123", user_in_db.hashed_password) is True
+    finally:
+        db.close()
 
 def test_duplicate_username(client: TestClient):
     # First user
