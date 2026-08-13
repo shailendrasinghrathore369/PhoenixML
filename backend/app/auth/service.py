@@ -1,10 +1,10 @@
 from fastapi import HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from app.auth.repository import UserRepository
-from app.auth.schemas import UserCreate, UserResponse, Token
+from app.auth.schemas import UserCreate, UserResponse, Token, RefreshTokenRequest, AccessTokenResponse
 from app.db.dependencies import get_db
-from app.auth.security import verify_password, create_access_token, create_refresh_token
-from app.auth.exceptions import AuthenticationError, InactiveUserError
+from app.auth.security import verify_password, create_access_token, create_refresh_token, decode_token
+from app.auth.exceptions import AuthenticationError, InactiveUserError, InvalidTokenError, ExpiredTokenError
 from datetime import datetime, timezone
 
 class AuthService:
@@ -49,5 +49,31 @@ class AuthService:
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
+            "token_type": "bearer"
+        }
+
+    def refresh_token(self, request: RefreshTokenRequest) -> dict:
+        try:
+            payload = decode_token(request.refresh_token, expected_type="refresh")
+            user_id_str = payload.get("sub")
+            from uuid import UUID
+            user_id = UUID(user_id_str)
+        except ExpiredTokenError:
+            raise  # Let expired token error bubble up
+        except Exception:
+            raise InvalidTokenError("Could not validate credentials")
+            
+        user = self.repo.get_user_by_id(user_id)
+        if not user:
+            # Masking "User not found" to prevent information leakage
+            raise InvalidTokenError("Could not validate credentials")
+            
+        if not user.is_active:
+            raise InactiveUserError("Inactive user")
+            
+        new_access_token = create_access_token(subject=user.id)
+        
+        return {
+            "access_token": new_access_token,
             "token_type": "bearer"
         }
