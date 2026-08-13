@@ -34,3 +34,6 @@ class RefreshTokenRequest(BaseModel):
 class AccessTokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+class LogoutResponse(BaseModel):
+    message: str

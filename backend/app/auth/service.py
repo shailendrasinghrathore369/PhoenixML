@@ -77,3 +77,15 @@ class AuthService:
             "access_token": new_access_token,
             "token_type": "bearer"
         }
+
+    def logout_user(self) -> dict:
+        """
+        Processes a logout request.
+        Note: The current PhoenixML authentication architecture uses stateless signed JWTs.
+        There is currently no server-side token revocation system (e.g. no TokenBlacklist table).
+        Therefore, this endpoint acknowledges the logout request, but the client must actively 
+        discard their access and refresh tokens. Existing tokens technically remain valid until expiration.
+        """
+        return {
+            "message": "Logout acknowledged. Client tokens should be discarded."
+        }
