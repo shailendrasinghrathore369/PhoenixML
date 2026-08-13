@@ -3,6 +3,7 @@ from app.users.models import User
 from app.auth.schemas import UserCreate
 from app.auth.security import get_password_hash
 from typing import Optional
+from datetime import datetime
 
 class UserRepository:
     def __init__(self, db: Session):
@@ -28,3 +29,9 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(db_user)
         return db_user
+
+    def update_last_login(self, user: User, login_time: datetime) -> User:
+        user.last_login = login_time
+        self.db.commit()
+        self.db.refresh(user)
+        return user

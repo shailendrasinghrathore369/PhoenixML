@@ -140,3 +140,25 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-08-13 22:13:17,018 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
 2026-08-13 22:13:17,035 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
 2026-08-13 22:13:17,039 - app.main - INFO - Shutting down PhoenixML backend...
+2026-08-13 22:19:51,930 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-08-13 22:19:51,935 - app.main - INFO - Starting up PhoenixML backend...
+2026-08-13 22:19:51,996 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-08-13 22:19:51,996 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-08-13 22:19:52,478 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-13 22:19:53,313 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-13 22:19:53,321 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-08-13 22:19:53,725 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-13 22:19:53,739 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-08-13 22:19:53,753 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-08-13 22:19:53,770 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-08-13 22:19:53,772 - app.main - INFO - Shutting down PhoenixML backend...
+2026-08-13 22:19:53,844 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-08-13 22:19:53,849 - app.main - INFO - Starting up PhoenixML backend...
+2026-08-13 22:19:54,753 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-08-13 22:19:55,548 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-08-13 22:19:56,341 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-08-13 22:19:56,364 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-08-13 22:19:57,128 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 400 Bad Request"
+2026-08-13 22:19:57,896 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-08-13 22:19:58,754 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-08-13 22:19:58,759 - app.main - INFO - Shutting down PhoenixML backend...
