@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models.user import User
+from app.users.models import User
 from app.auth.schemas import UserCreate
 from app.auth.security import get_password_hash
 from typing import Optional
@@ -16,6 +16,7 @@ class UserRepository:
 
     def create_user(self, user_in: UserCreate) -> User:
         db_user = User(
+            full_name=user_in.full_name,
             username=user_in.username,
             email=user_in.email,
             hashed_password=get_password_hash(user_in.password),

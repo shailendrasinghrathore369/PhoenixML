@@ -49,3 +49,46 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-07-26 23:07:10,926 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
 2026-07-26 23:07:10,928 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
 2026-07-26 23:09:39,665 - app.main - INFO - Shutting down PhoenixML backend...
+2026-07-31 21:15:51,167 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-07-31 21:15:51,175 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-31 21:15:51,217 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-07-31 21:15:51,217 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-07-31 21:15:58,368 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-31 21:15:58,412 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-31 21:15:58,420 - app.main - INFO - Shutting down PhoenixML backend...
+2026-07-31 21:20:04,232 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-07-31 21:20:04,257 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-31 21:20:04,304 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-07-31 21:20:04,304 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-07-31 21:20:09,768 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-31 21:20:09,783 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-31 21:20:09,785 - app.main - INFO - Shutting down PhoenixML backend...
+2026-07-31 21:21:40,509 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-07-31 21:21:40,515 - app.main - INFO - Starting up PhoenixML backend...
+2026-07-31 21:21:40,560 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-07-31 21:21:40,561 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-07-31 21:21:41,001 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-07-31 21:21:41,396 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-07-31 21:21:41,400 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-07-31 21:21:41,808 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-07-31 21:21:41,813 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-07-31 21:21:41,827 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-31 21:21:41,847 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-07-31 21:21:41,849 - app.main - INFO - Shutting down PhoenixML backend...
+2026-08-10 09:59:08,630 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-08-10 09:59:08,643 - app.main - INFO - Starting up PhoenixML backend...
+2026-08-10 09:59:08,871 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-08-10 09:59:08,872 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-08-10 09:59:09,417 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-10 09:59:09,857 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-10 09:59:09,864 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-08-10 09:59:10,259 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-08-10 09:59:10,265 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-08-10 09:59:10,278 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-08-10 09:59:10,287 - httpx - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Entity"
+2026-08-10 09:59:10,291 - app.main - INFO - Shutting down PhoenixML backend...
+2026-08-10 10:00:52,691 - app.main - INFO - Starting up PhoenixML backend...
+2026-08-10 10:03:16,533 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-08-10 10:03:16,536 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-08-10 10:07:08,379 - app.main - INFO - Starting up PhoenixML backend...
+2026-08-10 10:07:19,840 - app.main - INFO - Shutting down PhoenixML backend...

@@ -1,9 +1,10 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 import uuid
 from datetime import datetime
-from app.models.user import UserRole
+from app.users.models import UserRole
 
 class UserCreate(BaseModel):
+    full_name: str = Field(..., max_length=255)
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
     password: str = Field(..., min_length=8)
