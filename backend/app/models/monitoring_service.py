@@ -33,7 +33,10 @@ class MonitoringObservationService:
         
         # Ensure the observation is explicitly tied to the validated model_id
         if observation_in.model_id != model_id:
-            observation_in.model_id = model_id
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="URL model_id and body model_id do not match"
+            )
             
         return self.obs_repo.create(observation_in)
 
