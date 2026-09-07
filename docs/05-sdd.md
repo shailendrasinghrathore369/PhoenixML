@@ -456,16 +456,22 @@ The Monitoring Module continuously collects runtime metrics from deployed spam d
 
 ### Purpose
 
-The Drift Detection Module analyzes production data to identify changes that may reduce model performance.
+The Drift Detection Module analyzes production data to identify changes that may reduce model performance. 
 
-It supports both data drift and concept drift analysis.
+**Data Drift Definition:** Data drift refers to a statistically significant change in the distribution of input data/features. (Note: Concept drift—a change in the relationship between input features and the target—will be implemented in a future step, as well as Performance Drift). 
 
-### Responsibilities
+This module detects data drift automatically using statistical methods and informs downstream components without taking automatic maintenance action itself.
 
-- Calculate drift scores
-- Detect distribution changes
-- Classify drift severity
-- Generate drift reports
+### Detection Methodology
+- Uses the **Kolmogorov-Smirnov (KS) two-sample test** directly from `scipy.stats` to compare historical reference values with current values.
+- Exposes both the **KS statistic** (magnitude of difference) and the **p-value** (statistical significance).
+- Proposed Project Policy: Considers a feature statistically drifted if the `p-value < alpha`.
+- A configurable `alpha` significance level is used (default `0.05`). Note that statistical significance depends on sample size and should be interpreted alongside the KS statistic.
+
+### Configuration & Validation Handling
+- **Minimum Sample Policy:** Configurable (default `2`). If either distribution contains fewer than `minimum_samples` valid observations, the KS test is bypassed, yielding `INSUFFICIENT_DATA`.
+- **Invalid Value Handling:** `None`, `NaN`, and Infinite values are safely omitted rather than treated as zero.
+- **Overall Drift:** Detected if at least one successfully analyzed feature indicates a drift. If zero features can be analyzed, returns `INSUFFICIENT_DATA`.
 
 ### Interacts With
 
