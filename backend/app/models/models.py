@@ -43,3 +43,25 @@ class RegisteredModel(Base):
     
     # Relationships
     owner: Mapped['User'] = relationship('User', back_populates='models')
+    observations: Mapped[list['MonitoringObservation']] = relationship('MonitoringObservation', back_populates='model', cascade='all, delete-orphan')
+
+class MonitoringObservation(Base):
+    __tablename__ = 'monitoring_observations'
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    model_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey('registered_models.id', ondelete='CASCADE'), index=True, nullable=False
+    )
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    
+    prediction_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    positive_prediction_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    negative_prediction_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    
+    accuracy: Mapped[Optional[float]] = mapped_column(nullable=True)
+    precision: Mapped[Optional[float]] = mapped_column(nullable=True)
+    recall: Mapped[Optional[float]] = mapped_column(nullable=True)
+    f1_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+
+    # Relationships
+    model: Mapped['RegisteredModel'] = relationship('RegisteredModel', back_populates='observations')
