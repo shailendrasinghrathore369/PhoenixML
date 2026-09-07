@@ -125,7 +125,7 @@ def test_integration_complete_lifecycle(client: TestClient, test_user_engine):
         "accuracy": 0.95
     }
     
-    resp_create = client.post(f"/api/spam-models/{model_id}/observations", json=payload, headers=headers)
+    resp_create = client.post(f"/api/spam-models/{model_id}/monitoring", json=payload, headers=headers)
     assert resp_create.status_code == 201
     created_obs = resp_create.json()
     obs_id = created_obs["id"]
@@ -133,27 +133,27 @@ def test_integration_complete_lifecycle(client: TestClient, test_user_engine):
     assert created_obs["prediction_count"] == 100
     
     # 2. List
-    resp_list = client.get(f"/api/spam-models/{model_id}/observations", headers=headers)
+    resp_list = client.get(f"/api/spam-models/{model_id}/monitoring", headers=headers)
     assert resp_list.status_code == 200
     observations = resp_list.json()
     assert len(observations) == 1
     assert observations[0]["id"] == obs_id
     
     # 3. Detail
-    resp_detail = client.get(f"/api/spam-models/{model_id}/observations/{obs_id}", headers=headers)
+    resp_detail = client.get(f"/api/spam-models/{model_id}/monitoring/{obs_id}", headers=headers)
     assert resp_detail.status_code == 200
     assert resp_detail.json()["id"] == obs_id
     
     # 4. Delete
-    resp_delete = client.delete(f"/api/spam-models/{model_id}/observations/{obs_id}", headers=headers)
+    resp_delete = client.delete(f"/api/spam-models/{model_id}/monitoring/{obs_id}", headers=headers)
     assert resp_delete.status_code == 204
     assert not resp_delete.content # Response body must be empty
     
     # 5. Verify deleted
-    resp_detail_missing = client.get(f"/api/spam-models/{model_id}/observations/{obs_id}", headers=headers)
+    resp_detail_missing = client.get(f"/api/spam-models/{model_id}/monitoring/{obs_id}", headers=headers)
     assert resp_detail_missing.status_code == 404
     
-    resp_list_empty = client.get(f"/api/spam-models/{model_id}/observations", headers=headers)
+    resp_list_empty = client.get(f"/api/spam-models/{model_id}/monitoring", headers=headers)
     assert resp_list_empty.status_code == 200
     assert len(resp_list_empty.json()) == 0
 
@@ -169,19 +169,19 @@ def test_integration_multi_user_isolation(client: TestClient, test_user_engine, 
         "observed_at": datetime.now(timezone.utc).isoformat(),
         "prediction_count": 50
     }
-    resp_create = client.post(f"/api/spam-models/{eng_model_id}/observations", json=payload, headers=eng_headers)
+    resp_create = client.post(f"/api/spam-models/{eng_model_id}/monitoring", json=payload, headers=eng_headers)
     obs_id = resp_create.json()["id"]
     
     # Viewer tries to access it
-    resp_list = client.get(f"/api/spam-models/{eng_model_id}/observations", headers=view_headers)
+    resp_list = client.get(f"/api/spam-models/{eng_model_id}/monitoring", headers=view_headers)
     assert resp_list.status_code == 404
     
-    resp_detail = client.get(f"/api/spam-models/{eng_model_id}/observations/{obs_id}", headers=view_headers)
+    resp_detail = client.get(f"/api/spam-models/{eng_model_id}/monitoring/{obs_id}", headers=view_headers)
     assert resp_detail.status_code == 404
     
     # Note: VIEWER gets 403 on POST because of RBAC dependency evaluating first,
     # but if an Engineer tried, they would get 404 on the model.
-    resp_delete = client.delete(f"/api/spam-models/{eng_model_id}/observations/{obs_id}", headers=view_headers)
+    resp_delete = client.delete(f"/api/spam-models/{eng_model_id}/monitoring/{obs_id}", headers=view_headers)
     assert resp_delete.status_code == 403
 
 def test_integration_multi_user_isolation_engineer(client: TestClient, test_user_engine, test_user_admin):
@@ -194,7 +194,7 @@ def test_integration_multi_user_isolation_engineer(client: TestClient, test_user
         "observed_at": datetime.now(timezone.utc).isoformat(),
         "prediction_count": 50
     }
-    resp_create = client.post(f"/api/spam-models/{admin_model_id}/observations", json=payload, headers=eng_headers)
+    resp_create = client.post(f"/api/spam-models/{admin_model_id}/monitoring", json=payload, headers=eng_headers)
     assert resp_create.status_code == 404
 
 # C. RBAC
@@ -212,7 +212,7 @@ def test_integration_rbac(client: TestClient, test_user_viewer, test_user_admin)
     }
     
     # Viewer cannot create
-    resp_view_create = client.post(f"/api/spam-models/{view_model_id}/observations", json=payload_view, headers=view_headers)
+    resp_view_create = client.post(f"/api/spam-models/{view_model_id}/monitoring", json=payload_view, headers=view_headers)
     assert resp_view_create.status_code == 403
     
     # Admin can create
@@ -221,12 +221,12 @@ def test_integration_rbac(client: TestClient, test_user_viewer, test_user_admin)
         "observed_at": datetime.now(timezone.utc).isoformat(),
         "prediction_count": 10
     }
-    resp_admin_create = client.post(f"/api/spam-models/{admin_model_id}/observations", json=payload_admin, headers=admin_headers)
+    resp_admin_create = client.post(f"/api/spam-models/{admin_model_id}/monitoring", json=payload_admin, headers=admin_headers)
     assert resp_admin_create.status_code == 201
     
     # Admin can delete
     obs_id = resp_admin_create.json()["id"]
-    resp_admin_delete = client.delete(f"/api/spam-models/{admin_model_id}/observations/{obs_id}", headers=admin_headers)
+    resp_admin_delete = client.delete(f"/api/spam-models/{admin_model_id}/monitoring/{obs_id}", headers=admin_headers)
     assert resp_admin_delete.status_code == 204
 
 # D. Authentication
@@ -234,21 +234,21 @@ def test_integration_authentication(client: TestClient):
     model_id = str(uuid.uuid4())
     obs_id = str(uuid.uuid4())
     
-    assert client.get(f"/api/spam-models/{model_id}/observations").status_code == 401
-    assert client.post(f"/api/spam-models/{model_id}/observations", json={}).status_code == 401
-    assert client.get(f"/api/spam-models/{model_id}/observations/{obs_id}").status_code == 401
-    assert client.delete(f"/api/spam-models/{model_id}/observations/{obs_id}").status_code == 401
+    assert client.get(f"/api/spam-models/{model_id}/monitoring").status_code == 401
+    assert client.post(f"/api/spam-models/{model_id}/monitoring", json={}).status_code == 401
+    assert client.get(f"/api/spam-models/{model_id}/monitoring/{obs_id}").status_code == 401
+    assert client.delete(f"/api/spam-models/{model_id}/monitoring/{obs_id}").status_code == 401
     
     headers = {"Authorization": "Bearer invalid_token"}
-    assert client.get(f"/api/spam-models/{model_id}/observations", headers=headers).status_code == 401
+    assert client.get(f"/api/spam-models/{model_id}/monitoring", headers=headers).status_code == 401
 
 # E. Invalid UUIDs
 def test_integration_invalid_uuids(client: TestClient, test_user_engine):
     headers = {"Authorization": f"Bearer {test_user_engine['token']}"}
     model_id = test_user_engine['model_id']
     
-    assert client.get("/api/spam-models/not-a-uuid/observations", headers=headers).status_code == 422
-    assert client.get(f"/api/spam-models/{model_id}/observations/not-a-uuid", headers=headers).status_code == 422
+    assert client.get("/api/spam-models/not-a-uuid/monitoring", headers=headers).status_code == 422
+    assert client.get(f"/api/spam-models/{model_id}/monitoring/not-a-uuid", headers=headers).status_code == 422
 
 # F. Invalid request bodies
 def test_integration_invalid_request_bodies(client: TestClient, test_user_engine):
@@ -257,7 +257,7 @@ def test_integration_invalid_request_bodies(client: TestClient, test_user_engine
     
     # Missing required field
     payload1 = {"prediction_count": 10}
-    assert client.post(f"/api/spam-models/{model_id}/observations", json=payload1, headers=headers).status_code == 422
+    assert client.post(f"/api/spam-models/{model_id}/monitoring", json=payload1, headers=headers).status_code == 422
     
     # Negative prediction count
     payload2 = {
@@ -265,7 +265,7 @@ def test_integration_invalid_request_bodies(client: TestClient, test_user_engine
         "observed_at": datetime.now(timezone.utc).isoformat(),
         "prediction_count": -5
     }
-    assert client.post(f"/api/spam-models/{model_id}/observations", json=payload2, headers=headers).status_code == 422
+    assert client.post(f"/api/spam-models/{model_id}/monitoring", json=payload2, headers=headers).status_code == 422
     
     # Inconsistent predictions
     payload3 = {
@@ -275,7 +275,7 @@ def test_integration_invalid_request_bodies(client: TestClient, test_user_engine
         "positive_prediction_count": 8,
         "negative_prediction_count": 5
     }
-    assert client.post(f"/api/spam-models/{model_id}/observations", json=payload3, headers=headers).status_code == 422
+    assert client.post(f"/api/spam-models/{model_id}/monitoring", json=payload3, headers=headers).status_code == 422
     
     # Out of range metrics
     payload4 = {
@@ -284,7 +284,7 @@ def test_integration_invalid_request_bodies(client: TestClient, test_user_engine
         "prediction_count": 10,
         "accuracy": 1.5
     }
-    assert client.post(f"/api/spam-models/{model_id}/observations", json=payload4, headers=headers).status_code == 422
+    assert client.post(f"/api/spam-models/{model_id}/monitoring", json=payload4, headers=headers).status_code == 422
     
     # URL / Body model_id mismatch
     payload5 = {
@@ -292,7 +292,7 @@ def test_integration_invalid_request_bodies(client: TestClient, test_user_engine
         "observed_at": datetime.now(timezone.utc).isoformat(),
         "prediction_count": 10
     }
-    resp_mismatch = client.post(f"/api/spam-models/{model_id}/observations", json=payload5, headers=headers)
+    resp_mismatch = client.post(f"/api/spam-models/{model_id}/monitoring", json=payload5, headers=headers)
     assert resp_mismatch.status_code == 422
 
 # G. Pagination limits
@@ -300,9 +300,9 @@ def test_integration_pagination_limits(client: TestClient, test_user_engine):
     headers = {"Authorization": f"Bearer {test_user_engine['token']}"}
     model_id = test_user_engine['model_id']
     
-    assert client.get(f"/api/spam-models/{model_id}/observations?skip=-1", headers=headers).status_code == 422
-    assert client.get(f"/api/spam-models/{model_id}/observations?limit=0", headers=headers).status_code == 422
-    assert client.get(f"/api/spam-models/{model_id}/observations?limit=101", headers=headers).status_code == 422
+    assert client.get(f"/api/spam-models/{model_id}/monitoring?skip=-1", headers=headers).status_code == 422
+    assert client.get(f"/api/spam-models/{model_id}/monitoring?limit=0", headers=headers).status_code == 422
+    assert client.get(f"/api/spam-models/{model_id}/monitoring?limit=101", headers=headers).status_code == 422
 
 # H. Wrong model_id + valid observation_id
 def test_integration_wrong_model_id_valid_observation(client: TestClient, test_user_engine, test_user_admin):
@@ -314,7 +314,7 @@ def test_integration_wrong_model_id_valid_observation(client: TestClient, test_u
         "observed_at": datetime.now(timezone.utc).isoformat(),
         "prediction_count": 50
     }
-    resp_create = client.post(f"/api/spam-models/{eng_model_id}/observations", json=payload, headers=eng_headers)
+    resp_create = client.post(f"/api/spam-models/{eng_model_id}/monitoring", json=payload, headers=eng_headers)
     obs_id = resp_create.json()["id"]
     
     # Try to access it with wrong model ID, but owned by Engineer
@@ -333,7 +333,7 @@ def test_integration_wrong_model_id_valid_observation(client: TestClient, test_u
     model2_id = str(model2.id)
     db.close()
     
-    resp_wrong_model = client.get(f"/api/spam-models/{model2_id}/observations/{obs_id}", headers=eng_headers)
+    resp_wrong_model = client.get(f"/api/spam-models/{model2_id}/monitoring/{obs_id}", headers=eng_headers)
     assert resp_wrong_model.status_code == 404
 
 # I. Empty list behavior
@@ -341,7 +341,7 @@ def test_integration_empty_list_behavior(client: TestClient, test_user_engine):
     headers = {"Authorization": f"Bearer {test_user_engine['token']}"}
     model_id = test_user_engine['model_id']
     
-    resp_list = client.get(f"/api/spam-models/{model_id}/observations", headers=headers)
+    resp_list = client.get(f"/api/spam-models/{model_id}/monitoring", headers=headers)
     assert resp_list.status_code == 200
     assert resp_list.json() == []
 
@@ -356,9 +356,9 @@ def test_integration_multiple_observations_pagination(client: TestClient, test_u
             "observed_at": datetime.now(timezone.utc).isoformat(),
             "prediction_count": i * 10
         }
-        client.post(f"/api/spam-models/{model_id}/observations", json=payload, headers=headers)
+        client.post(f"/api/spam-models/{model_id}/monitoring", json=payload, headers=headers)
         
-    resp_list = client.get(f"/api/spam-models/{model_id}/observations?skip=1&limit=2", headers=headers)
+    resp_list = client.get(f"/api/spam-models/{model_id}/monitoring?skip=1&limit=2", headers=headers)
     assert resp_list.status_code == 200
     data = resp_list.json()
     assert len(data) == 2
@@ -375,7 +375,7 @@ def test_integration_response_schema(client: TestClient, test_user_engine):
         "prediction_count": 100
     }
     
-    resp = client.post(f"/api/spam-models/{model_id}/observations", json=payload, headers=headers)
+    resp = client.post(f"/api/spam-models/{model_id}/monitoring", json=payload, headers=headers)
     data = resp.json()
     
     assert "id" in data
