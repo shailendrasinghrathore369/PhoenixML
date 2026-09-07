@@ -188,6 +188,30 @@ Health status is categorized as:
 
 The health assessment serves as the primary indicator used by the AIMD Engine during decision making.
 
+### Proposed PhoenixML Health Score Policy
+
+*Note: The following methodology represents an explicit project design decision mapping operational data to the health state, rather than being copied directly from the high-level project synopsis.*
+
+**1. Normalization:**
+All model metrics are evaluated in the range `[0,1]`. They are normalized to a standard `0-100` scale via: `normalized_metric = metric * 100`.
+
+**2. Metric Weights:**
+A weighted combination determines the final `0-100` score. For the Email Spam Detection use case, the provisional weights are:
+- **F1-Score (40%):** Receives the highest weight because it balances precision and recall on inherently imbalanced spam datasets.
+- **Precision (25%):** Highly critical, as false positives misclassify legitimate emails as spam, directly damaging user trust.
+- **Recall (25%):** Important to capture true spam, but a false negative is typically less harmful than a false positive.
+- **Accuracy (10%):** Retained as a general metric but given the lowest weight because accuracy can be artificially inflated on imbalanced sets.
+
+**3. Missing Metrics Handling:**
+Missing metrics are never treated as zero. If any metric is missing, its weight is redistributed proportionally among the remaining available metrics. If absolutely no metrics are available, the score evaluates to `None` with a status of `INSUFFICIENT_DATA`.
+
+**4. Configurable Status Thresholds:**
+The boundary mappings from a `0-100` score to Health Status are explicitly configurable:
+- **Healthy:** `Score >= 80`
+- **Warning:** `60 <= Score < 80`
+- **Critical:** `Score < 60`
+- **Insufficient Data:** Score is `None`
+
 ---
 
 # 7. Decision Logic

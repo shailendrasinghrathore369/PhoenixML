@@ -482,10 +482,19 @@ The Health Assessment Module evaluates the operational condition of each deploye
 
 ### Responsibilities
 
-- Calculate health score
-- Assign health status
+- Calculate health score (using normalized metrics and configurable weights)
+- Assign health status (Healthy, Warning, Critical, Insufficient Data)
 - Generate health reports
 - Provide input to AIMD
+
+### Proposed PhoenixML Health Score Policy
+
+*Note: The explicit score distribution below is a newly introduced project design policy tailored for Spam Detection, rather than an original synopsis requirement.*
+
+- **Metric Weights:** F1-Score (0.40), Precision (0.25), Recall (0.25), Accuracy (0.10).
+- **Normalization:** `metric * 100` resulting in a `0-100` score.
+- **Handling Missing Metrics:** Redistribute weights proportionally among available metrics. If none exist, return `INSUFFICIENT_DATA`.
+- **Thresholds (Configurable):** Healthy (80-100), Warning (60-79.9), Critical (0-59.9).
 
 ### Interacts With
 
