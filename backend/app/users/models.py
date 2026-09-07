@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy import String, Boolean, DateTime, func, Enum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
 
@@ -36,3 +36,6 @@ class User(Base):
         nullable=False
     )
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    models: Mapped[list["RegisteredModel"]] = relationship("RegisteredModel", back_populates="owner", cascade="all, delete-orphan")

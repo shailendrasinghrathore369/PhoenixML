@@ -646,3 +646,388 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-08-13 23:08:54,552 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
 2026-08-13 23:08:54,944 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 400 Bad Request"
 2026-08-13 23:08:54,947 - app.main - INFO - Shutting down PhoenixML backend...
+2026-08-31 14:03:28,125 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-01 08:29:34,656 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-01 08:35:06,597 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-09-01 08:35:06,600 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-09-01 11:47:35,966 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:45:21,621 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:21,633 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:45:21,897 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-09-07 19:45:21,898 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-09-07 19:45:22,413 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:45:23,176 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:45:23,183 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 19:45:23,601 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:45:23,607 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 19:45:23,630 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 19:45:23,653 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 19:45:23,659 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:45:23,759 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:23,775 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:45:24,572 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:45:25,278 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:45:26,031 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:26,056 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:26,808 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 400 Bad Request"
+2026-09-07 19:45:27,542 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:45:28,289 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:28,292 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:45:28,307 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:28,311 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:45:28,690 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:45:28,700 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:28,711 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:29,068 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:29,447 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:29,808 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:45:29,814 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:45:29,815 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:45:30,317 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:30,324 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:45:30,712 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:45:30,723 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:31,111 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:45:31,491 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:45:31,894 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:45:32,655 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 19:45:33,380 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 19:45:33,770 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:45:34,898 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 200 OK"
+2026-09-07 19:45:35,373 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:35,759 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:45:36,519 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:36,521 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:45:36,894 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:36,933 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 200 OK"
+2026-09-07 19:45:37,279 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:37,307 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:45:37,688 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:37,695 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:45:38,058 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:38,065 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 19:45:38,455 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:38,471 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 19:45:38,850 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:38,859 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 403 Forbidden"
+2026-09-07 19:45:38,870 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:38,885 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:39,251 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:39,259 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 200 OK"
+2026-09-07 19:45:39,644 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:39,650 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:45:39,653 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:39,657 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:45:40,043 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 200 OK"
+2026-09-07 19:45:40,411 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:40,815 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:40,827 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:41,187 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:41,203 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:41,229 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:41,628 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 400 Bad Request"
+2026-09-07 19:45:41,630 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:45:55,582 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:55,591 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:45:55,667 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-09-07 19:45:55,668 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-09-07 19:45:56,061 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:45:56,813 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:45:56,818 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 19:45:57,212 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:45:57,217 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 19:45:57,235 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 19:45:57,253 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 19:45:57,255 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:45:57,322 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:45:57,333 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:45:58,079 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:45:58,911 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:45:59,647 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:45:59,669 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:00,452 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 400 Bad Request"
+2026-09-07 19:46:01,212 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:46:02,029 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:02,040 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:46:02,061 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:02,071 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:46:02,472 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:46:02,490 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:02,508 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:02,916 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:03,305 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:03,711 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:46:03,722 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:46:03,727 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:46:04,121 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:04,133 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:46:04,543 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:46:04,558 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:04,985 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:46:05,378 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:46:05,770 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:46:06,551 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 19:46:07,322 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 19:46:07,734 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:46:08,962 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 200 OK"
+2026-09-07 19:46:09,398 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:09,841 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:46:10,677 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:10,682 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:46:11,058 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:11,066 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 200 OK"
+2026-09-07 19:46:11,427 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:11,434 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:46:11,795 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:11,801 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:46:12,159 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:12,166 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 19:46:12,612 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:12,625 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 19:46:12,970 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:12,978 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 403 Forbidden"
+2026-09-07 19:46:12,990 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:12,998 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:13,379 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:13,394 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 200 OK"
+2026-09-07 19:46:13,775 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:13,786 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:46:13,799 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:46:13,804 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:46:14,170 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 200 OK"
+2026-09-07 19:46:14,517 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:14,892 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:14,901 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:15,278 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:15,294 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:15,313 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:46:15,673 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 400 Bad Request"
+2026-09-07 19:46:15,675 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:47:17,046 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:17,050 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:47:17,127 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-09-07 19:47:17,128 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-09-07 19:47:17,526 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:47:18,361 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:47:18,365 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 19:47:18,734 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:47:18,739 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 19:47:18,748 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 19:47:18,756 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 19:47:18,757 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:47:18,811 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:18,814 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:47:19,568 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:47:20,316 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:47:21,057 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:21,077 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:21,940 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 400 Bad Request"
+2026-09-07 19:47:22,671 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:47:23,478 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:23,486 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:47:23,496 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:23,503 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:47:23,939 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:47:23,952 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:23,968 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:24,346 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:24,734 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:25,132 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:47:25,145 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:47:25,148 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:47:25,385 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:25,399 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:47:25,810 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:47:25,826 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:26,237 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:47:26,642 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:47:27,105 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:47:27,858 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 19:47:28,628 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 19:47:29,095 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:47:30,264 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 200 OK"
+2026-09-07 19:47:30,667 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:31,108 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:47:31,853 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:31,859 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:47:32,248 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:32,279 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 200 OK"
+2026-09-07 19:47:32,677 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:32,693 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:47:33,065 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:33,084 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:47:33,486 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:33,507 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 19:47:33,907 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:33,930 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 19:47:34,383 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:34,405 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 403 Forbidden"
+2026-09-07 19:47:34,416 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:34,424 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:34,803 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:34,825 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 200 OK"
+2026-09-07 19:47:35,202 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:35,220 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:47:35,226 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:47:35,235 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:47:35,627 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 200 OK"
+2026-09-07 19:47:36,027 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:36,427 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:36,446 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:36,861 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:36,893 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:36,923 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:47:37,336 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 400 Bad Request"
+2026-09-07 19:47:37,344 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:57:53,381 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:57:53,391 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:57:53,472 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-09-07 19:57:53,474 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-09-07 19:57:53,883 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:57:54,726 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:57:54,731 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 19:57:55,117 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 19:57:55,123 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 19:57:55,132 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 19:57:55,140 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 19:57:55,141 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:57:55,184 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:57:55,190 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:57:55,939 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:57:56,696 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:57:57,445 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:57:57,473 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:57:58,250 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 400 Bad Request"
+2026-09-07 19:57:59,005 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:57:59,865 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:57:59,875 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:57:59,887 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:57:59,892 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:58:00,321 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:58:00,337 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:00,353 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:00,780 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:01,193 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:01,567 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:58:01,584 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 19:58:01,587 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:58:01,739 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:01,743 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:58:02,201 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:58:02,217 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:02,627 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:58:03,025 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:58:03,442 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:58:04,211 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 19:58:04,991 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 19:58:05,418 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 19:58:06,571 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 200 OK"
+2026-09-07 19:58:06,977 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:07,356 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 19:58:08,097 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:08,101 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 19:58:08,497 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:08,531 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 200 OK"
+2026-09-07 19:58:08,951 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:08,971 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:58:09,381 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:09,400 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:58:09,781 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:09,795 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 19:58:10,224 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:10,241 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 19:58:10,621 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:10,636 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 403 Forbidden"
+2026-09-07 19:58:10,650 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:10,660 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:11,049 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:11,082 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 200 OK"
+2026-09-07 19:58:11,512 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:11,531 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 403 Forbidden"
+2026-09-07 19:58:11,541 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 19:58:11,553 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 19:58:11,966 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 200 OK"
+2026-09-07 19:58:12,361 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:12,740 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:12,763 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:13,187 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:13,212 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:13,235 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 19:58:13,641 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 400 Bad Request"
+2026-09-07 19:58:13,643 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 20:00:54,441 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:00:54,447 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 20:00:54,537 - passlib.handlers.bcrypt - DEBUG - detected 'bcrypt' backend, version '4.0.1'
+2026-09-07 20:00:54,537 - passlib.handlers.bcrypt - DEBUG - 'bcrypt' backend lacks $2$ support, enabling workaround
+2026-09-07 20:00:54,922 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 20:00:55,678 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 20:00:55,683 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 20:00:56,078 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 201 Created"
+2026-09-07 20:00:56,085 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 409 Conflict"
+2026-09-07 20:00:56,094 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 20:00:56,107 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/register "HTTP/1.1 422 Unprocessable Content"
+2026-09-07 20:00:56,110 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 20:00:56,248 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:00:56,257 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 20:00:56,986 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 20:00:57,749 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 20:00:58,477 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:00:58,499 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:00:59,260 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 400 Bad Request"
+2026-09-07 20:01:00,103 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 20:01:00,845 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:00,847 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 20:01:00,855 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:00,859 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 20:01:01,270 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 20:01:01,287 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:01,315 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:01,732 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:02,131 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:02,501 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 20:01:02,510 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/logout "HTTP/1.1 200 OK"
+2026-09-07 20:01:02,514 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 20:01:02,725 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:02,731 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 20:01:03,124 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 20:01:03,138 - httpx2 - INFO - HTTP Request: GET http://testserver/api/users/me "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:03,611 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 20:01:04,005 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 20:01:04,382 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 20:01:05,145 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 20:01:05,967 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 409 Conflict"
+2026-09-07 20:01:06,352 - httpx2 - INFO - HTTP Request: PATCH http://testserver/api/users/me "HTTP/1.1 200 OK"
+2026-09-07 20:01:07,469 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 200 OK"
+2026-09-07 20:01:07,832 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:08,189 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/login "HTTP/1.1 200 OK"
+2026-09-07 20:01:08,901 - httpx2 - INFO - HTTP Request: POST http://testserver/api/users/me/change-password "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:08,903 - app.main - INFO - Shutting down PhoenixML backend...
+2026-09-07 20:01:09,309 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:09,323 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 200 OK"
+2026-09-07 20:01:09,696 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:09,705 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 20:01:10,141 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:10,149 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 403 Forbidden"
+2026-09-07 20:01:10,540 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:10,549 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 20:01:11,010 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:11,045 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 200 OK"
+2026-09-07 20:01:11,452 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:11,468 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-and-ml "HTTP/1.1 403 Forbidden"
+2026-09-07 20:01:11,505 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:11,513 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/admin-only "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:11,903 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:11,925 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 200 OK"
+2026-09-07 20:01:12,291 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:12,313 - httpx2 - INFO - HTTP Request: GET http://testserver/test-rbac/viewer-only "HTTP/1.1 403 Forbidden"
+2026-09-07 20:01:12,320 - asyncio - DEBUG - Using proactor: IocpProactor
+2026-09-07 20:01:12,329 - app.main - INFO - Starting up PhoenixML backend...
+2026-09-07 20:01:12,719 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 200 OK"
+2026-09-07 20:01:13,111 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:13,511 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:13,527 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:13,955 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:13,973 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:13,999 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 401 Unauthorized"
+2026-09-07 20:01:14,375 - httpx2 - INFO - HTTP Request: POST http://testserver/api/auth/refresh "HTTP/1.1 400 Bad Request"
+2026-09-07 20:01:14,378 - app.main - INFO - Shutting down PhoenixML backend...
