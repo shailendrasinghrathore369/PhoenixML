@@ -2,25 +2,30 @@ import math
 from typing import List, Optional, Dict, Any
 from enum import Enum
 from pydantic import BaseModel
+from datetime import datetime
 
-class PerformanceTrend(str, Enum):
+class PerformanceStatus(str, Enum):
     IMPROVING = "improving"
     STABLE = "stable"
-    DEGRADING = "degrading"
+    DEGRADED = "degraded"
     INSUFFICIENT_DATA = "insufficient_data"
 
-class MetricChange(BaseModel):
+class MetricTrend(BaseModel):
     metric_name: str
-    old_value: float
-    new_value: float
+    earliest_value: float
+    latest_value: float
     absolute_change: float
-    relative_change: Optional[float]
-    trend: PerformanceTrend
+    percentage_change: Optional[float]
+    direction: PerformanceStatus
 
-class PerformanceAnalysisResult(BaseModel):
-    overall_trend: PerformanceTrend
-    metric_changes: Dict[str, MetricChange]
-    configurable_threshold_used: float
+class PerformanceAnalysis(BaseModel):
+    observation_count: int
+    start_time: Optional[datetime]
+    end_time: Optional[datetime]
+    metric_trends: Dict[str, MetricTrend]
+    overall_status: PerformanceStatus
+    degraded_metrics: List[str]
+    summary: str
 
 class PerformanceAnalyzer:
     """
@@ -30,20 +35,17 @@ class PerformanceAnalyzer:
     
     def __init__(self, degradation_threshold: float = 0.05):
         """
-        Initialize the analyzer with a provisional threshold.
+        Initialize the analyzer with a degradation threshold policy.
         
         Args:
             degradation_threshold: The threshold for detecting meaningful degradation 
-                or improvement. This is a PROVISIONAL implementation default (5%), 
-                not an official PhoenixML requirement. It should be made configurable 
-                by the integrating service.
+                or improvement. Default is 0.05 (5 percentage points).
         """
         self.degradation_threshold = degradation_threshold
         self.supported_metrics = ["accuracy", "precision", "recall", "f1_score"]
 
     def _sort_observations(self, observations: List[Any]) -> List[Any]:
-        """A. Observation ordering"""
-        # Ensure chronological ordering by observed_at
+        """Ensure chronological ordering by observed_at."""
         return sorted(observations, key=lambda obs: obs.observed_at)
 
     def _get_metric_value(self, obs: Any, metric: str) -> Optional[float]:
@@ -54,79 +56,96 @@ class PerformanceAnalyzer:
             return None
         return value
 
-    def _compare_metric(self, old_value: float, new_value: float, metric_name: str) -> MetricChange:
-        """B & C. Metric comparison and calculation"""
-        abs_change = new_value - old_value
-        rel_change = abs_change / old_value if old_value != 0 else None
+    def _compare_metric(self, earliest_value: float, latest_value: float, metric_name: str) -> MetricTrend:
+        """Calculate the absolute and percentage change for a metric."""
+        abs_change = latest_value - earliest_value
+        pct_change = ((latest_value - earliest_value) / earliest_value * 100) if earliest_value != 0 else None
         
         if abs_change <= -self.degradation_threshold:
-            trend = PerformanceTrend.DEGRADING
+            direction = PerformanceStatus.DEGRADED
         elif abs_change >= self.degradation_threshold:
-            trend = PerformanceTrend.IMPROVING
+            direction = PerformanceStatus.IMPROVING
         else:
-            trend = PerformanceTrend.STABLE
+            direction = PerformanceStatus.STABLE
             
-        return MetricChange(
+        return MetricTrend(
             metric_name=metric_name,
-            old_value=old_value,
-            new_value=new_value,
+            earliest_value=earliest_value,
+            latest_value=latest_value,
             absolute_change=abs_change,
-            relative_change=rel_change,
-            trend=trend
+            percentage_change=pct_change,
+            direction=direction
         )
 
-    def _classify_overall_trend(self, metric_changes: Dict[str, MetricChange]) -> PerformanceTrend:
-        """D. Classification of the resulting performance trend"""
-        if not metric_changes:
-            return PerformanceTrend.INSUFFICIENT_DATA
+    def _classify_overall_status(self, metric_trends: Dict[str, MetricTrend]) -> PerformanceStatus:
+        """Classify the overall performance status based on individual metric trends."""
+        if not metric_trends:
+            return PerformanceStatus.INSUFFICIENT_DATA
             
-        # Provisional policy: 
-        # If ANY metric is degrading, overall is degrading.
-        # Else if ANY metric is improving, overall is improving.
-        # Else stable.
-        # This policy is a provisional implementation default.
-        has_degrading = any(c.trend == PerformanceTrend.DEGRADING for c in metric_changes.values())
-        has_improving = any(c.trend == PerformanceTrend.IMPROVING for c in metric_changes.values())
+        has_degraded = any(c.direction == PerformanceStatus.DEGRADED for c in metric_trends.values())
+        has_improving = any(c.direction == PerformanceStatus.IMPROVING for c in metric_trends.values())
         
-        if has_degrading:
-            return PerformanceTrend.DEGRADING
+        if has_degraded:
+            return PerformanceStatus.DEGRADED
         elif has_improving:
-            return PerformanceTrend.IMPROVING
+            return PerformanceStatus.IMPROVING
         else:
-            return PerformanceTrend.STABLE
+            return PerformanceStatus.STABLE
 
-    def analyze(self, observations: List[Any]) -> PerformanceAnalysisResult:
+    def analyze(self, observations: List[Any]) -> PerformanceAnalysis:
         if not observations or len(observations) < 2:
-            return PerformanceAnalysisResult(
-                overall_trend=PerformanceTrend.INSUFFICIENT_DATA,
-                metric_changes={},
-                configurable_threshold_used=self.degradation_threshold
+            return PerformanceAnalysis(
+                observation_count=len(observations),
+                start_time=observations[0].observed_at if observations else None,
+                end_time=observations[0].observed_at if observations else None,
+                metric_trends={},
+                overall_status=PerformanceStatus.INSUFFICIENT_DATA,
+                degraded_metrics=[],
+                summary="Insufficient data to compute performance trends."
             )
             
         sorted_obs = self._sort_observations(observations)
         
-        oldest = sorted_obs[0]
-        newest = sorted_obs[-1]
+        earliest = sorted_obs[0]
+        latest = sorted_obs[-1]
         
-        if oldest.observed_at == newest.observed_at:
-             return PerformanceAnalysisResult(
-                overall_trend=PerformanceTrend.INSUFFICIENT_DATA,
-                metric_changes={},
-                configurable_threshold_used=self.degradation_threshold
+        if earliest.observed_at == latest.observed_at:
+             return PerformanceAnalysis(
+                observation_count=len(observations),
+                start_time=earliest.observed_at,
+                end_time=latest.observed_at,
+                metric_trends={},
+                overall_status=PerformanceStatus.INSUFFICIENT_DATA,
+                degraded_metrics=[],
+                summary="Observations span zero time. Insufficient data for trends."
             )
         
-        changes = {}
+        trends = {}
+        degraded_metrics = []
         for metric in self.supported_metrics:
-            old_val = self._get_metric_value(oldest, metric)
-            new_val = self._get_metric_value(newest, metric)
+            earliest_val = self._get_metric_value(earliest, metric)
+            latest_val = self._get_metric_value(latest, metric)
             
-            if old_val is not None and new_val is not None:
-                changes[metric] = self._compare_metric(old_val, new_val, metric)
+            if earliest_val is not None and latest_val is not None:
+                trend = self._compare_metric(earliest_val, latest_val, metric)
+                trends[metric] = trend
+                if trend.direction == PerformanceStatus.DEGRADED:
+                    degraded_metrics.append(metric)
                 
-        overall_trend = self._classify_overall_trend(changes)
+        overall_status = self._classify_overall_status(trends)
         
-        return PerformanceAnalysisResult(
-            overall_trend=overall_trend,
-            metric_changes=changes,
-            configurable_threshold_used=self.degradation_threshold
+        summary = f"Performance is {overall_status.value}."
+        if degraded_metrics:
+            summary += f" Degrading metrics: {', '.join(degraded_metrics)}."
+        elif overall_status == PerformanceStatus.INSUFFICIENT_DATA:
+            summary = "Insufficient valid metrics to compute performance trends."
+            
+        return PerformanceAnalysis(
+            observation_count=len(observations),
+            start_time=earliest.observed_at,
+            end_time=latest.observed_at,
+            metric_trends=trends,
+            overall_status=overall_status,
+            degraded_metrics=degraded_metrics,
+            summary=summary
         )

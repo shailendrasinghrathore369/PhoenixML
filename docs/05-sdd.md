@@ -504,7 +504,40 @@ The Health Assessment Module evaluates the operational condition of each deploye
 
 ---
 
-## 10.6 AIMD Decision Engine
+## 10.6 Performance Analysis Module
+
+### Purpose
+
+The Performance Analysis Module is an independent computation layer responsible for calculating chronological performance trends across historical `MonitoringObservation` records. It operates purely on domain logic and does not query the database directly. 
+
+**IMPORTANT DISTINCTION:**
+- **NOT Health Score:** While a Health Score evaluates the current momentary condition of a model using weighted metrics, the Performance Trend evaluates how those metrics are changing over time.
+- **NOT Drift Detection:** It does not analyze feature distribution changes or prediction probability drift. It only calculates mathematical trends across collected historical monitoring evaluation points (accuracy, precision, recall, f1_score).
+- **NOT AIMD:** It does not produce maintenance recommendations. It is merely an analytical component whose outputs can later be consumed by an AIMD engine.
+
+### Supported Metrics Analyzed
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+
+### Trend Calculation and Configurable Degradation Policy
+Observations are sorted chronologically by `observed_at`. The module calculates an absolute change (`latest - earliest`) and a safe percentage change. 
+
+The threshold for distinguishing degradation from a stable fluctuation is governed by a configurable degradation policy (defaulting to an absolute decrease of at least `0.05`, i.e., 5 percentage points):
+- `Change <= -0.05` → DEGRADED
+- `Change >= 0.05` → IMPROVING
+- `-0.05 < Change < 0.05` → STABLE
+
+### Handling of Missing Data
+- Any metrics that are missing (`None`), `NaN`, or infinite at either boundary of the time window are safely omitted from calculation.
+- Missing metrics are NOT treated as zero.
+- Empty time windows or identical timestamps correctly yield an `INSUFFICIENT_DATA` overall status without crashing.
+- Division by zero during percentage calculations (if earliest value is precisely `0.0`) is natively caught and set to `None`.
+
+---
+
+## 10.7 AIMD Decision Engine
 
 ### Purpose
 
