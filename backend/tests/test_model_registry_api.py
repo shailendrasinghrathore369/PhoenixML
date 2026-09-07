@@ -178,3 +178,102 @@ def test_user_cannot_access_another_users_model(client: TestClient, test_user_en
     del_resp = client.delete(f"/api/spam-models/{model_id}", headers=headers2)
     assert del_resp.status_code == 404
 
+def test_invalid_empty_name_is_rejected(client: TestClient, test_user_engine):
+    headers = {"Authorization": f"Bearer {test_user_engine['token']}"}
+    payload = {
+        "name": "   ",
+        "framework": "scikit-learn"
+    }
+    response = client.post("/api/spam-models", json=payload, headers=headers)
+    assert response.status_code == 422
+
+def test_valid_lifecycle_transitions(client: TestClient, test_user_engine):
+    headers = {"Authorization": f"Bearer {test_user_engine['token']}"}
+    
+    # Created in DEVELOPMENT by default
+    create_resp = client.post("/api/spam-models", json={"name": "LifeCycle", "framework": "PyTorch"}, headers=headers)
+    assert create_resp.status_code == 201
+    model_id = create_resp.json()["id"]
+    assert create_resp.json()["status"] == "DEVELOPMENT"
+
+    # Update to ACTIVE
+    put_active = client.put(f"/api/spam-models/{model_id}", json={"status": "ACTIVE"}, headers=headers)
+    assert put_active.status_code == 200
+    assert put_active.json()["status"] == "ACTIVE"
+
+    # Update to ARCHIVED
+    put_archived = client.put(f"/api/spam-models/{model_id}", json={"status": "ARCHIVED"}, headers=headers)
+    assert put_archived.status_code == 200
+    assert put_archived.json()["status"] == "ARCHIVED"
+
+def test_invalid_pagination(client: TestClient, test_user_engine):
+    headers = {"Authorization": f"Bearer {test_user_engine['token']}"}
+    resp1 = client.get("/api/spam-models?skip=-1&limit=10", headers=headers)
+    assert resp1.status_code == 422
+    
+    resp2 = client.get("/api/spam-models?skip=0&limit=0", headers=headers)
+    assert resp2.status_code == 422
+    
+    resp3 = client.get("/api/spam-models?skip=0&limit=101", headers=headers)
+    assert resp3.status_code == 422
+
+def test_valid_pagination(client: TestClient, test_user_engine):
+    headers = {"Authorization": f"Bearer {test_user_engine['token']}"}
+    client.post("/api/spam-models", json={"name": "Page1", "framework": "PT"}, headers=headers)
+    client.post("/api/spam-models", json={"name": "Page2", "framework": "PT"}, headers=headers)
+    
+    resp = client.get("/api/spam-models?skip=0&limit=1", headers=headers)
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+
+def test_malformed_model_uuid(client: TestClient, test_user_engine):
+    headers = {"Authorization": f"Bearer {test_user_engine['token']}"}
+    response = client.get("/api/spam-models/not-a-uuid", headers=headers)
+    assert response.status_code == 422
+
+def test_admin_write_access(client: TestClient):
+    from tests.conftest import TestingSessionLocal
+    db = TestingSessionLocal()
+    # Create Admin User
+    user = User(
+        username="admin_api",
+        email="api_admin@example.com",
+        full_name="API Admin",
+        hashed_password=get_password_hash("password123"),
+        role=UserRole.ADMIN,
+        is_active=True
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    response = client.post("/api/auth/login", data={"username": "admin_api", "password": "password123"})
+    token = response.json()["access_token"]
+    db.close()
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"name": "AdminModel", "framework": "scikit-learn"}
+    create_response = client.post("/api/spam-models", json=payload, headers=headers)
+    assert create_response.status_code == 201
+
+def test_viewer_read_access(client: TestClient, test_user_viewer):
+    # To test viewer read access, we need the viewer to own a model.
+    # Since viewer can't create, we insert one manually.
+    from tests.conftest import TestingSessionLocal
+    db = TestingSessionLocal()
+    model = RegisteredModel(
+        id=uuid.uuid4(),
+        name="ViewerModel",
+        framework="PT",
+        owner_id=test_user_viewer["user_id"],
+        status=ModelStatus.DEVELOPMENT
+    )
+    db.add(model)
+    db.commit()
+    
+    headers = {"Authorization": f"Bearer {test_user_viewer['token']}"}
+    resp = client.get("/api/spam-models", headers=headers)
+    assert resp.status_code == 200
+    assert len(resp.json()) >= 1
+    assert resp.json()[0]["name"] == "ViewerModel"
+    db.close()
