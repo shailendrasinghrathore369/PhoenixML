@@ -262,51 +262,67 @@ The workflow ensures that recommendations are based on multiple sources of evide
 
 ---
 
-# 8. Recommendation Strategy
+# 8. Recommendation Strategy & Decision Matrix
 
-The AIMD Engine recommends maintenance actions according to the severity of the detected issues.
+The AIMD Engine recommends maintenance actions according to evaluated health status, drift signals, and performance trends.
 
-| Health Status | Drift Severity | Recommended Action |
-|---------------|---------------|--------------------|
-| Healthy | Low | Continue Monitoring |
-| Healthy | Medium | Increase Monitoring Frequency |
-| Warning | Medium | Review Model Performance |
-| Warning | High | Retrain Model |
-| Critical | High | Replace or Redeploy Model |
-
-The recommendation strategy provides a structured approach for responding to different operational conditions.
-
----
-
-# 9. Recommendation Priority
-
-To assist users in identifying the urgency of maintenance activities, each recommendation is assigned a priority level.
-
-| Priority | Meaning |
-|----------|---------|
-| Low | Informational recommendation |
-| Medium | Maintenance should be scheduled |
-| High | Immediate attention required |
-
-Priority levels enable users to focus on the most critical maintenance tasks first.
+| Condition / Evidence Pattern | Recommended Action (`AIMDAction`) | Priority (`AIMDPriority`) | Confidence (`AIMDConfidence`) | Rationale / Policy |
+|------------------------------|-----------------------------------|---------------------------|-------------------------------|--------------------|
+| **Critical Health** (Score < 60 or CRITICAL) + Verified Rollback Target Available | `ROLLBACK` | `CRITICAL` | `HIGH` / `MODERATE` | Severe operational degradation; verified stable predecessor model available for immediate reversion subject to human approval. |
+| **Critical Health** (Score < 60 or CRITICAL) + No Rollback Target Available | `RETRAIN` | `CRITICAL` | `HIGH` / `MODERATE` | Rollback precluded by safety check (no target verified). Immediate retraining on recent verified data recommended. |
+| **Concept Drift Detected** (Performance drop across labeled windows) | `RETRAIN` | `HIGH` / `CRITICAL` | `HIGH` / `MODERATE` | Shift in $P(Y \mid X)$ (e.g., emerging spam vocabulary/patterns); retraining required to align model weights with current concept. |
+| **Performance Degradation** Without Detected Drift (Data or Concept) | `HUMAN_REVIEW` | `HIGH` / `MEDIUM` | `MODERATE` | Performance dropped but feature distributions and labeled concepts appear stable. Root cause uncharacterized; blind retraining avoided. |
+| **Health Warning** (Score 60–79.9) With Concurrent Data Drift | `RETRAIN` | `HIGH` | `HIGH` | Feature distribution shift accompanied by declining composite health scores. Retraining recommended on recent operational data. |
+| **Data Drift Detected** on Healthy/Stable Model ($\\ge 2$ features drifted) | `DATA_COLLECTION` | `MEDIUM` | `HIGH` / `MODERATE` | Input features shifted but current accuracy remains stable. Recommend gathering and labeling production samples from drifted subspace. |
+| **Data Drift Detected** on Healthy/Stable Model (single feature drifted) | `INCREASED_MONITORING` | `MEDIUM` | `HIGH` / `MODERATE` | Distribution shift in isolated feature. Increase observation frequency to monitor for latent classification degradation. |
+| **Healthy & Stable Model** (Score $\ge 80$, Stable/Improving, No Drift) | `CONTINUE_MONITORING` | `LOW` | `HIGH` | Model operating within acceptable operational tolerances. Standard monitoring cadence maintained. |
+| **Insufficient Data / Missing Signals** | `HUMAN_REVIEW` | `MEDIUM` | `INSUFFICIENT` | Monitoring observations span zero time or metrics missing. Investigation of data collection and ingestion pipelines needed. |
 
 ---
 
-# 10. Explainable Decision Support
+### 8.1 Rollback Safety Invariant
 
-A key objective of the AIMD Engine is to ensure that every recommendation is transparent and understandable.
+Under PhoenixML safety policies:
+- The engine **NEVER** recommends `ROLLBACK` solely because health is critical or concept drift is detected.
+- `ROLLBACK` is evaluated against `historical_maintenance_context`:
+  1. If `historical_maintenance_context` is missing, empty, or has `rollback_target_available = False`, `ROLLBACK` is **precluded**.
+  2. In this event, the engine falls back to `RETRAIN` (Priority: `CRITICAL`), explicitly documenting that rollback was precluded due to lack of a verified target.
+  3. This safety gate prevents production outages caused by rolling back to non-existent or corrupted model artifacts.
 
-Instead of presenting only a maintenance action, the engine also provides the reasoning behind the recommendation.
+---
 
-### Example
+# 9. Recommendation Priority and Confidence
 
-| Evaluation Result | Recommendation |
-|-------------------|---------------|
-| Accuracy decreased and high data drift detected | Retrain the model |
-| Stable performance with low drift | Continue monitoring |
-| Critical health score and severe concept drift | Replace deployed model |
+### 9.1 Priority Levels
 
-Providing explanations improves user confidence and supports informed decision-making during model maintenance.
+To assist operators in prioritizing remediation, recommendations are assigned a deterministic urgency level:
+
+| Priority | Operational Context | Response SLA |
+|----------|---------------------|--------------|
+| `CRITICAL` | Critical health score (< 60), severe classification collapse, or unmitigated concept drift | Immediate human operator triage and approval |
+| `HIGH` | Concept drift detected, performance degradation without drift, or warning health with data drift | Prioritized scheduling during current operational cycle |
+| `MEDIUM` | Data drift on stable models (data collection / increased monitoring) or insufficient monitoring data | Routine review and diagnostic evaluation |
+| `LOW` | Model healthy and performance stable or improving | Standard observational logging |
+
+### 9.2 Confidence Ratings
+
+Confidence reflects the breadth and corroboration of independent analytical evidence:
+
+| Confidence | Analytical Evidence Breadth |
+|------------|-----------------------------|
+| `HIGH` | Corroborated by 2 or more independent analytical sources (e.g., health assessment + performance trend + concept drift) |
+| `MODERATE` | Supported by a primary strong analytical signal with limited corroborating metrics |
+| `LOW` | Ambiguous or conflicting signals requiring expert triage |
+| `INSUFFICIENT` | Missing observations or inputs marked `INSUFFICIENT_DATA` |
+
+---
+
+# 10. Explainable Decision Support & Human-in-the-Loop Contract
+
+A core architectural principle of PhoenixML is transparent decision support:
+1. **Explainability Synthesis:** AIMD consumes structured signals, severity ratings, and primary degradation factors from the upstream **Explainability Layer** (`ExplanationResult`), embedding them directly into `supporting_signals` and `evidence_summary`.
+2. **Deterministic Rationale:** Every recommendation contains an unambiguous narrative explaining why an action was chosen, what evidence corroborated it, and whether alternatives (such as rollback) were precluded.
+3. **Strict Human Approval Gate:** Every `AIMDRecommendation` has `requires_human_approval = True`. The engine cannot execute autonomous maintenance actions. The human operator retains exclusive authority to approve, reject, or modify recommendations.
 
 # 11. Complete Decision Workflow
 

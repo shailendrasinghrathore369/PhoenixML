@@ -660,29 +660,66 @@ Signals are deterministically prioritized and sorted:
 
 ### Purpose
 
-The Adaptive Intelligent Model Decision (AIMD) Engine analyzes the health of deployed models and generates maintenance recommendations to assist ML engineers.
+The Adaptive Intelligent Model Decision (AIMD) Engine serves as the analytical decision-support core of PhoenixML. It evaluates multi-source operational signals—including composite health scores, chronological performance trends, continuous feature data drift, windowed concept drift, and structured explainability diagnostics—to generate deterministic, actionable model maintenance recommendations for human review.
 
-The current implementation uses a rule-based decision policy while allowing future integration of more advanced decision-making techniques.
+### Architectural Invariants & Scope Boundaries
 
-### Responsibilities
+1. **Decision Support Only (Human-in-the-Loop):** PhoenixML is explicitly **not** an autonomous or self-healing platform. The AIMD engine generates recommendations to assist ML engineers; it never initiates retraining pipelines, model rollback, deployment changes, or parameter modifications automatically.
+2. **Strict Human Approval Gate:** Every `AIMDRecommendation` has `requires_human_approval = True` unconditionally.
+3. **Rollback Safety Invariant:** The engine **never** recommends `ROLLBACK` simply because health is critical or drift has occurred. A rollback recommendation requires verified historical context confirming that an alternate stable model version is available in the registry. If unavailable or missing, the engine falls back to `RETRAIN` (Priority: `CRITICAL`).
+4. **Pure Analytical Decoupling:** The module resides in `backend/app/decisions/aimd.py` and is fully decoupled from:
+   - Web frameworks (no FastAPI, Starlette, HTTP routers, or route handlers)
+   - Persistence layers (no SQLAlchemy, database engines, sessions, or ORM models)
+   - Background task managers (no Celery, background workers, or external MLOps platforms)
 
-- Analyze model health
-- Generate maintenance recommendations
-- Assign recommendation priority
-- Provide decision explanations
+### Inputs (`AIMDContext`)
+
+The engine consumes a typed domain container aggregating upstream analytical outputs:
+- `health_assessment: Optional[HealthAssessmentResult]`: Composite 0–100 score, status (`HEALTHY`, `WARNING`, `CRITICAL`, `INSUFFICIENT_DATA`), and metric weights.
+- `performance_analysis: Optional[PerformanceAnalysis]`: Chronological trend directions, degraded metrics list, and status (`DEGRADED`, `STABLE`, `IMPROVING`, `INSUFFICIENT_DATA`).
+- `data_drift_analysis: Optional[DataDriftAnalysis]`: Two-sample Kolmogorov-Smirnov test results, p-values, and list of drifted feature names.
+- `concept_drift_analysis: Optional[ConceptDriftAnalysis]`: Window-based classification performance degradation comparisons and status (`DRIFTED`, `NO_DRIFT`, `INSUFFICIENT_DATA`).
+- `explainability_result: Optional[ExplanationResult]`: Structured diagnostic signals, severity ratings, and deterministically selected primary factors.
+- `prediction_confidence: Optional[float]`: Optional model prediction confidence metric.
+- `historical_maintenance_context: Optional[Dict[str, Any]]`: Model registry state verifying rollback viability (e.g., `{"rollback_target_available": bool, "previous_stable_version": Optional[str]}`).
+
+### Outputs (`AIMDRecommendation`)
+
+- `action: AIMDAction`: Controlled recommendation enum:
+  - `CONTINUE_MONITORING`: Model operating normally; continue standard observation schedule.
+  - `INCREASED_MONITORING`: Mild data drift detected without performance loss; increase monitoring frequency.
+  - `DATA_COLLECTION`: Multiple feature distributions shifted; collect and label production samples for data pipeline evaluation.
+  - `RETRAIN`: Concept drift, warning health with data drift, or critical health (where rollback is precluded); retrain on recent verified data.
+  - `ROLLBACK`: Critical health with verified rollback target model available in registry.
+  - `HUMAN_REVIEW`: Insufficient monitoring data, performance degradation without detected drift, or ambiguous signal combinations.
+- `priority: AIMDPriority`: Urgency classification (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`).
+- `confidence: AIMDConfidence`: Evidence corroboration rating (`HIGH`, `MODERATE`, `LOW`, `INSUFFICIENT`).
+- `rationale: str`: Deterministic human-interpretable justification explaining the decision and noting precluded actions.
+- `supporting_signals: List[str]`: Corroborating signals extracted from upstream modules and explainability factors.
+- `health_score: Optional[float]`: Sanitized composite health score (0–100).
+- `health_status: Optional[str]`: Model health status classification.
+- `requires_human_approval: bool = True`: Invariant safety flag requiring explicit authorized approval.
+- `evidence_summary: Dict[str, Any]`: Structured dictionary of raw metrics, drifted features, degraded metrics, and explainability factors.
 
 ### Recommendation Workflow
 
 ```mermaid
-flowchart LR
+flowchart TD
 
-Monitoring --> Drift
+A[Monitoring Metrics] --> B[Performance Trends]
+A --> C[Composite Health Assessment]
+A --> D[Data Drift KS-Test]
+A --> E[Concept Drift Window Comparison]
 
-Drift --> Health
+B --> F[Explainability Layer<br/>Signal Synthesis]
+C --> F
+D --> F
+E --> F
 
-Health --> AIMD
-
-AIMD --> Recommendation
+F --> G[AIMD Decision Engine<br/>Rule Evaluation & Rollback Safety]
+G --> H[AIMDRecommendation<br/>requires_human_approval = True]
+H --> I[Human Operator Review]
+I --> J[Approve / Reject / Modify]
 ```
 
 ---
