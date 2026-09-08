@@ -480,7 +480,70 @@ This module detects data drift automatically using statistical methods and infor
 
 ---
 
-## 10.5 Health Assessment Module
+## 10.5 Concept Drift Module
+
+### Purpose
+
+The Concept Drift Module identifies changes in the relationship between input data and the target concept over time by comparing classification performance between a historical reference labeled window and a current labeled window.
+
+### Definition and Distinction from Data Drift
+
+- **Concept Drift:** Refers to changes in the relationship between input features and target labels ($P(Y|X)$), reflected by shifts in model classification behavior and performance over time. In email spam detection, attackers continually evolve phrasing, obfuscation tricks, and campaigns, causing classification boundaries to degrade. Spam categorization may also experience *virtual concept drift*, where the relative proportions of spam categories alter over time.
+- **Data Drift:** Refers solely to changes in the marginal input feature distribution ($P(X)$) without reference to ground-truth labels.
+- **Crucial Architectural Note:** This module implements an **observable, performance-based proxy** for concept drift, **not a mathematical proof** that the underlying conditional probability distribution $P(Y|X)$ has changed.
+
+### Labeled-Window Methodology
+
+The detector compares two sets of labeled observations:
+1. **Reference Window:** Baseline ground-truth labels ($y_{\text{true}}$) and predictions ($y_{\text{pred}}$).
+2. **Current Window:** Recent ground-truth labels ($y_{\text{true}}$) and predictions ($y_{\text{pred}}$).
+
+### Monitored Metrics and Calculation Policy
+
+For each labeled window, four core binary classification metrics are evaluated deterministically:
+- **Accuracy:** $(TP + TN) / \text{Total}$
+- **Precision:** $TP / (TP + FP)$ (returns `None` if $TP + FP = 0$; no positive predictions)
+- **Recall:** $TP / (TP + FN)$ (returns `None` if $TP + FN = 0$; no positive ground-truth instances)
+- **F1-Score:** $2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}$ (returns `0.0` if Precision + Recall == 0; returns `None` if either component is undefined)
+
+Undefined metric values are represented explicitly as `None`, preventing misleading zero values from distorting drift signals.
+
+### Drift Signal and Degradation Threshold
+
+For each monitored metric:
+$$\Delta_{\text{metric}} = \text{Metric}_{\text{current}} - \text{Metric}_{\text{reference}}$$
+
+Degradation is evaluated against a configurable threshold ($\text{threshold} = 0.05$ by default, identical to the project monitoring policy):
+- $\Delta_{\text{metric}} \le -\text{threshold}$ $\rightarrow$ **Degraded** (`degraded = True`)
+- $\Delta_{\text{metric}} > -\text{threshold}$ $\rightarrow$ **Not Degraded** (`degraded = False`)
+
+A concept drift signal is triggered (`status = DRIFTED`, `drift_detected = True`) when **at least one** monitored metric exhibits degradation beyond the configured threshold, provided sufficient labeled data is available. The exact set of degraded metrics is exposed in `drifted_metrics` (e.g., `["f1_score", "recall"]`).
+
+### Sample Size and Validation Policy
+
+- **Minimum Sample Size:** Configurable via `minimum_samples` (default: 2, must be $\ge 2$). If either window has fewer valid pairs than `minimum_samples`, the detector returns `status = INSUFFICIENT_DATA`, `drift_detected = None`.
+- **Validation Handling:** Mismatched $y_{\text{true}}$ and $y_{\text{pred}}$ lengths immediately raise a `ValueError`. Invalid values (`None`, `NaN`, infinite values, or unrecognized labels) are safely omitted rather than silently coerced.
+- **Configurable Binary Labels:** Generic binary labels (`positive_class`, `negative_class`, default 1 and 0) allow reuse across arbitrary binary classifiers without hardcoding domain labels.
+
+### Key Distinctions and Boundaries
+
+- **Distinction from PerformanceAnalyzer:** `PerformanceAnalyzer` examines chronological trends across successive `MonitoringObservation` database records over time. `ConceptDriftDetector` performs window-to-window performance comparison across labeled ground-truth sets.
+- **Distinction from DataDriftDetector:** `DataDriftDetector` computes the Kolmogorov-Smirnov (KS) statistic on continuous input feature distributions without requiring ground truth. `ConceptDriftDetector` specifically evaluates performance degradation on labeled outcomes.
+- **Human-in-the-Loop:** The detector is an analytical decision-support signal only. It takes **no automatic maintenance actions** (no autonomous retraining, deployment, rollback, or alerting). Final decisions remain under authorized human control.
+
+### Limitations of Performance-Based Detection
+
+1. **Ground-Truth Label Latency:** Production spam labels often arrive with delay (user reporting, manual triage), meaning concept drift signals reflect latency in label acquisition.
+2. **Proxy Representation:** A drop in performance indicates that the model's learned mapping is no longer optimal, but cannot isolate whether the shift is pure concept drift ($P(Y|X)$), covariate shift with model inadequacy, or virtual drift.
+3. **Sample Sensitivity:** Small labeled sample sizes reduce statistical power; hence, the explicit `INSUFFICIENT_DATA` status ensures low-confidence windows are not prematurely classified as drifted or stable.
+
+### Interacts With
+- Pure analytical component: does not depend on FastAPI, SQLAlchemy, or MonitoringService.
+- Downstream consumer: Future Adaptive Intelligent Model Decision (AIMD) engine.
+
+---
+
+## 10.6 Health Assessment Module
 
 ### Purpose
 
@@ -510,7 +573,7 @@ The Health Assessment Module evaluates the operational condition of each deploye
 
 ---
 
-## 10.6 Performance Analysis Module
+## 10.7 Performance Analysis Module
 
 ### Purpose
 
@@ -543,7 +606,7 @@ The threshold for distinguishing degradation from a stable fluctuation is govern
 
 ---
 
-## 10.7 AIMD Decision Engine
+## 10.8 AIMD Decision Engine
 
 ### Purpose
 
@@ -574,7 +637,7 @@ AIMD --> Recommendation
 
 ---
 
-## 10.7 Dashboard Module
+## 10.9 Dashboard Module
 
 ### Purpose
 
@@ -585,27 +648,35 @@ The Dashboard Module presents a consolidated overview of system activity and mod
 - Display registered models
 - Display monitoring statistics
 - Display health summaries
-- Display recent recommendations
-- Display notifications
+- Display drift status
+- Display active recommendations
+
+### Interacts With
+
+- All backend services through API Layer
 
 ---
 
-## 10.8 Reporting Module
+## 10.10 Reporting Module
 
 ### Purpose
 
-The Reporting Module generates reports that summarize monitoring results, drift analysis, health assessments, and maintenance recommendations.
+The Reporting Module generates reports that summarize monitoring results, drift evaluations, health status, and maintenance recommendations.
 
 ### Responsibilities
 
-- Generate monitoring reports
-- Generate health reports
-- Generate recommendation summaries
-- Export reports
+- Generate model health reports
+- Export monitoring data
+- Maintain report history
+
+### Interacts With
+
+- Database Layer
+- API Layer
 
 ---
 
-## 10.9 Notification Module
+## 10.11 Notification Module
 
 ### Purpose
 

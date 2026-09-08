@@ -163,14 +163,21 @@ These metrics help determine whether the model continues to perform within accep
 
 ## 6.2 Drift Reports
 
-The Drift Detection component identifies changes in production data that may affect model performance.
+The Drift Detection component identifies changes in production data and model behavior that may degrade predictive efficacy.
 
-The AIMD Engine evaluates two forms of drift:
+The system distinguishes between two separate analytical signals:
 
-- **Data Drift** – Changes in the statistical distribution of input features.
-- **Concept Drift** – Changes in the relationship between inputs and expected outputs.
+- **Data Drift:** Changes in the marginal distribution of input features ($P(X)$) evaluated without ground-truth labels (e.g., via the Kolmogorov-Smirnov test).
+- **Concept Drift:** Changes in the underlying relationship between inputs and ground-truth targets ($P(Y|X)$), such as evolving spamming patterns and shifting vocabularies. In email spam detection, virtual concept drift may also occur when the distribution of spam types changes over time.
 
-Higher drift scores indicate an increased likelihood that the deployed model requires maintenance.
+### Concept Drift Operational Proxy
+
+In PhoenixML, concept drift is detected via a **window-based performance comparison** between a historical reference labeled window and a current labeled window:
+1. **Performance Metrics:** Evaluates Accuracy, Precision, Recall, and F1-Score for each labeled window under deterministic zero-division rules.
+2. **Degradation Threshold:** Evaluates performance change ($\Delta_{\text{metric}} = \text{current} - \text{reference}$). If $\Delta_{\text{metric}} \le -0.05$ (default 5 percentage points) on any monitored metric, drift is flagged (`DRIFTED`).
+3. **Minimum Sample Size:** Configurable threshold (default $\ge 2$). Windows below the threshold return `INSUFFICIENT_DATA` rather than false drift claims.
+4. **Proxy Nature:** This is an operational monitoring signal/proxy, not a mathematical proof that $P(Y|X)$ has shifted.
+5. **No Automatic Action:** Drift signals inform health assessments and provide input for future AIMD rule evaluation. No automated retraining or deployment action is executed autonomously.
 
 ---
 
