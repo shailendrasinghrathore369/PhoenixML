@@ -11,6 +11,7 @@ from app.db.base_class import Base
 
 if TYPE_CHECKING:
     from app.users.models import User
+    from app.decisions.models import DecisionLog
 
 class ModelStatus(str, PyEnum):
     DEVELOPMENT = 'DEVELOPMENT'
@@ -44,6 +45,7 @@ class RegisteredModel(Base):
     # Relationships
     owner: Mapped['User'] = relationship('User', back_populates='models')
     observations: Mapped[list['MonitoringObservation']] = relationship('MonitoringObservation', back_populates='model', cascade='all, delete-orphan')
+    decisions: Mapped[list['DecisionLog']] = relationship('DecisionLog', back_populates='model', cascade='all, delete-orphan')
 
 class MonitoringObservation(Base):
     __tablename__ = 'monitoring_observations'

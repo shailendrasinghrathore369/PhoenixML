@@ -12,6 +12,9 @@ from app.decisions.aimd import (
     AIMDConfiguration,
     AIMDDecisionEngine,
 )
+from app.decisions.models import ApprovalStatus, DecisionLog
+from app.decisions.schemas import DecisionLogBase, DecisionLogCreate, DecisionLogRead
+from app.decisions.repository import DecisionLogRepository
 
 __all__ = [
     "AIMDAction",
@@ -21,4 +24,11 @@ __all__ = [
     "AIMDRecommendation",
     "AIMDConfiguration",
     "AIMDDecisionEngine",
+    "ApprovalStatus",
+    "DecisionLog",
+    "DecisionLogBase",
+    "DecisionLogCreate",
+    "DecisionLogRead",
+    "DecisionLogRepository",
 ]
+

@@ -718,9 +718,51 @@ E --> F
 
 F --> G[AIMD Decision Engine<br/>Rule Evaluation & Rollback Safety]
 G --> H[AIMDRecommendation<br/>requires_human_approval = True]
-H --> I[Human Operator Review]
-I --> J[Approve / Reject / Modify]
+H --> I[DecisionLog Persistence<br/>decision_logs Table]
+I --> J[Human Operator Review]
+J --> K[Approve / Reject / Modify]
 ```
+
+### Decision Persistence Layer (`DecisionLog` Entity & Repository)
+
+To fulfill the SRS requirement for an immutable recommendation and decision audit history, PhoenixML persists all AIMD recommendations through a dedicated database foundation in `backend/app/decisions/`.
+
+#### 1. Database Model (`DecisionLog`)
+- **Table Name:** `decision_logs`
+- **Relationship:** 1-to-many child of `registered_models` (`RegisteredModel.decisions`), with cascading delete (`ondelete="CASCADE"` and `cascade="all, delete-orphan"`).
+- **Columns & Data Types:**
+  - `id`: `UUID` (Primary Key, auto-generated UUIDv4)
+  - `model_id`: `UUID` (Foreign Key to `registered_models.id`, indexed, non-null)
+  - `created_at`: `DateTime(timezone=True)` (default `func.now()`, non-null, UTC)
+  - `health_score`: `Float` (Nullable; stores evaluated composite health score 0.0–100.0)
+  - `health_status`: `String(50)` (Nullable; stores health status classification)
+  - `recommended_action`: `Enum(AIMDAction, name="aimdaction")` (Non-null; recommended action)
+  - `priority`: `Enum(AIMDPriority, name="aimdpriority")` (Non-null; urgency rating)
+  - `confidence`: `Float` (Nullable; normalized evidence corroboration score 0.0–1.0)
+  - `rationale`: `Text` (Non-null; deterministic justification)
+  - `explanation`: `Text` (Nullable; diagnostic explanation from explainability layer)
+  - `supporting_signals`: `JSON` (Nullable; metric shifts, drifted feature lists, and analytical signal payloads)
+  - `requires_human_approval`: `Boolean` (Default `True`, non-null; guarantees human oversight)
+  - `approval_status`: `Enum(ApprovalStatus, name="approvalstatus")` (Default `PENDING`, non-null; values: `PENDING`, `APPROVED`, `REJECTED`)
+
+#### 2. Schema Validation Contracts (`DecisionLogCreate`, `DecisionLogRead`)
+- **Float Range Bounds:** `health_score` validated $\in [0.0, 100.0]$; `confidence` validated $\in [0.0, 1.0]$.
+- **Special Float Rejection:** Strict rejection of `NaN`, `+Inf`, and `-Inf`.
+- **String Integrity:** `rationale` validated to reject empty strings and whitespace-only content.
+- **Timezone Awareness:** `created_at` rejects naive datetimes, requiring explicit timezone information.
+- **Read Model:** `DecisionLogRead` with `from_attributes = True` for direct ORM serialization.
+
+#### 3. Repository Interface (`DecisionLogRepository`)
+Located in `backend/app/decisions/repository.py`, the repository encapsulates database operations:
+- `create(decision_in: DecisionLogCreate) -> DecisionLog`: Persists new decision log with UTC timestamp normalization.
+- `get_by_id(decision_id: UUID) -> Optional[DecisionLog]`: Retrieves decision record by primary key.
+- `list_by_model(model_id: UUID, skip: int = 0, limit: int = 100) -> Sequence[DecisionLog]`: Paginated query ordered descending by `created_at`.
+- `count_by_model(model_id: UUID) -> int`: Efficient count of decision logs associated with a registered model.
+- `delete(decision_id: UUID) -> bool`: Deletes a decision record by ID, returning boolean success.
+
+#### 4. Decoupling and Human-in-the-Loop Guarantees
+- The repository and database entities are completely decoupled from FastAPI route handlers, authentication logic, and decision engine calculation routines.
+- `requires_human_approval` defaults unconditionally to `True`, ensuring that stored recommendations cannot be interpreted by automated systems as authorization for production actions.
 
 ---
 
