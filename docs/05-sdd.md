@@ -606,7 +606,57 @@ The threshold for distinguishing degradation from a stable fluctuation is govern
 
 ---
 
-## 10.8 AIMD Decision Engine
+## 10.8 Explainability Module
+
+### Purpose
+
+The Explainability Module synthesizes monitoring, performance trend, data drift, and concept drift observations into a structured, human-interpretable operational explanation of model condition. It answers the fundamental operational question: *"Why does PhoenixML consider this deployed model unhealthy or degraded?"*
+
+### Core Responsibilities
+
+- Aggregate analytical findings from Health Assessment, Performance Analysis, Data Drift Detection, and Concept Drift Detection.
+- Produce structured, evidence-based explanations distinguishing observed signals, severity levels, and supporting metrics.
+- Prioritize operational signals to identify primary factors driving degraded or warning states.
+- Act as a pure analytical explanation input for the downstream AIMD engine without generating maintenance actions itself.
+
+### Inputs
+
+The module consumes existing analytical domain models without querying the database:
+- `PerformanceAnalysis`: Chronological metric trends (accuracy, precision, recall, F1-score) and status (`DEGRADED`, `STABLE`, `IMPROVING`, `INSUFFICIENT_DATA`).
+- `HealthAssessmentResult`: Normalized composite health score (0–100 scale) and status (`HEALTHY`, `WARNING`, `CRITICAL`, `INSUFFICIENT_DATA`).
+- `DataDriftAnalysis`: Two-sample Kolmogorov-Smirnov test results, p-values, and drifted feature names.
+- `ConceptDriftAnalysis`: Window-based classification performance degradation comparisons, drifted metrics, and sample sizes.
+
+### Output Structure
+
+The module produces a strongly-typed `ExplanationResult` containing:
+- **`overall_summary`**: Coherent, non-causal synthesis describing model condition and observed degradation/drift signals.
+- **`signals`**: Ranked list of individual `ExplanationSignal` objects:
+  - `category`: `health`, `performance`, `concept_drift`, or `data_drift`.
+  - `severity`: `critical`, `warning`, or `info`.
+  - `title`: Concise signal title.
+  - `description`: Detailed evidence-based observation.
+  - `evidence`: Dictionary of raw supporting metrics, p-values, or sample sizes.
+- **`primary_factors`**: Deterministically selected key drivers of warning or critical status for easy consumption by AIMD rules.
+- **`health_score`** and **`health_status`**: Model condition summary metrics.
+- **`has_explanation`**: Boolean flag indicating whether sufficient evidence existed to evaluate model condition (`False` when inputs have insufficient data).
+- **`confidence`**: Confidence rating (`high`, `moderate`, `low`, `none`) reflecting the breadth of evaluated analytical evidence.
+
+### Signal Prioritization
+
+Signals are deterministically prioritized and sorted:
+1. **Severity Hierarchy:** `CRITICAL` (score < 60, degraded performance, concept drift) > `WARNING` (score 60–79.9, data drift) > `INFO` (healthy, stable, insufficient data).
+2. **Category Hierarchy (tie-breaking):** `health` > `performance` > `concept_drift` > `data_drift`.
+
+### Evidence-Based Explanation Methodology & Causal Limitation
+
+- **Non-Causal Associative Phrasing:** The module reports observable statistical signals and metric shifts as *supporting evidence* and *associated patterns* (e.g., *"accompanied by"*, *"consistent with model degradation"*).
+- **Scientific Limitation:** PhoenixML explicitly does **not** claim mathematical or causal certainty. Observing concurrent data drift and performance drops does not prove that input drift caused classification failure.
+- **Separation from AIMD:** The Explainability layer does **not** make maintenance recommendations (it will never output *"retrain the model"* or *"rollback"*). It provides an interpretable factual diagnostic foundation that the AIMD decision engine subsequently evaluates against business policies.
+
+---
+
+## 10.9 AIMD Decision Engine
 
 ### Purpose
 
@@ -637,7 +687,7 @@ AIMD --> Recommendation
 
 ---
 
-## 10.9 Dashboard Module
+## 10.10 Dashboard Module
 
 ### Purpose
 
@@ -657,7 +707,7 @@ The Dashboard Module presents a consolidated overview of system activity and mod
 
 ---
 
-## 10.10 Reporting Module
+## 10.11 Reporting Module
 
 ### Purpose
 
@@ -676,7 +726,7 @@ The Reporting Module generates reports that summarize monitoring results, drift 
 
 ---
 
-## 10.11 Notification Module
+## 10.12 Notification Module
 
 ### Purpose
 

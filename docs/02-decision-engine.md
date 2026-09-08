@@ -310,19 +310,19 @@ Providing explanations improves user confidence and supports informed decision-m
 
 # 11. Complete Decision Workflow
 
-The AIMD Engine operates as the intelligence layer of PhoenixML by transforming monitoring information into actionable maintenance recommendations.
+The AIMD Engine operates as the decision-support layer of PhoenixML by transforming monitoring information and explainability signals into actionable maintenance recommendations.
 
 The complete decision-making process consists of the following stages:
 
 1. Collect monitoring metrics from deployed spam email detection models.
-2. Detect data drift and concept drift.
-3. Evaluate the overall health of the deployed model.
-4. Apply predefined decision rules.
-5. Generate an appropriate maintenance recommendation.
-6. Assign a recommendation priority.
-7. Provide an explanation for the recommendation.
-8. Present the recommendation to the user for review.
-9. Record the user's decision for future reference.
+2. Evaluate performance trends and compute model health assessment.
+3. Detect data drift (feature distributions) and concept drift (performance across labeled windows).
+4. Synthesize diagnostic observations in the **Explainability Layer** to identify primary degradation factors and supporting evidence.
+5. Apply predefined AIMD decision rules against health status and explainability signals.
+6. Generate an appropriate maintenance recommendation.
+7. Assign a recommendation priority.
+8. Present the recommendation and structured explainability evidence to the user for review.
+9. Record the user's decision for auditability and compliance.
 
 This structured workflow ensures that recommendations are generated consistently while maintaining transparency throughout the decision-making process.
 
@@ -335,23 +335,19 @@ flowchart TD
 
 A[Collect Monitoring Metrics]
 
-B[Analyze Data Drift]
+B[Performance & Health Analysis]
 
-C[Analyze Concept Drift]
+C[Data & Concept Drift Detection]
 
-D[Evaluate Model Health]
+D[Explainability Layer<br/>Synthesize Evidence & Signals]
 
 E[Apply AIMD Decision Rules]
 
-F[Generate Recommendation]
+F[Generate Recommendation & Priority]
 
-G[Assign Priority]
+G[User Review<br/>Human-in-the-Loop]
 
-H[Generate Explanation]
-
-I[User Review]
-
-J[Approve or Reject]
+H[Approve or Reject]
 
 A --> B
 
@@ -368,10 +364,6 @@ E --> F
 F --> G
 
 G --> H
-
-H --> I
-
-I --> J
 ```
 
 The workflow illustrates how multiple evaluation stages contribute to a final recommendation while ensuring that all maintenance decisions remain under human supervision.
