@@ -22,6 +22,9 @@ env/
 *.log
 logs/
 
+# Node.js
+node_modules/
+
 # IDE
 .vscode/
 .idea/

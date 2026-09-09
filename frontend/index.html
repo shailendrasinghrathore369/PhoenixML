@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhoenixML — MLOps Decision-Support Platform</title>
+  <link rel="stylesheet" href="./styles/dashboard.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+</head>
+<body>
+  <div id="root">
+    <div class="state-container">
+      <div class="spinner"></div>
+      <p style="color: #94a3b8; font-size: 0.9rem;">Initializing PhoenixML Dashboard...</p>
+    </div>
+  </div>
+
+  <!-- React 18 Production UMD (Local with CDN fallback) -->
+  <script src="./vendor/react.production.min.js"></script>
+  <script>
+    if (!window.React) {
+      document.write('<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin><\/script>');
+    }
+  </script>
+  <script src="./vendor/react-dom.production.min.js"></script>
+  <script>
+    if (!window.ReactDOM) {
+      document.write('<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin><\/script>');
+    }
+  </script>
+
+  <!-- Mount PhoenixML Single Page Application -->
+  <script type="module" src="./src/App.js"></script>
+</body>
+</html>

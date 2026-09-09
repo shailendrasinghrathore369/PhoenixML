@@ -53,6 +53,30 @@ def create_app() -> FastAPI:
     # Register dashboard router
     from app.dashboard.router import router as dashboard_router
     app.include_router(dashboard_router, prefix="/api", tags=["dashboard"])
+
+    # Configure CORS for local development and frontend clients
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Mount operator frontend UI if present
+    from pathlib import Path
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.responses import RedirectResponse
+
+    frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend"
+    if frontend_dir.is_dir():
+        app.mount("/ui", StaticFiles(directory=str(frontend_dir), html=True), name="ui")
+
+        @app.get("/", include_in_schema=False)
+        def root_redirect():
+            return RedirectResponse(url="/ui/")
+
     return app
 
 app = create_app()

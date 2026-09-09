@@ -546,6 +546,24 @@ The Dashboard API provides consolidated statistics, model inventory summaries, m
 - **Status Code:** `200 OK`
 - **Behavior:** Identical to `/api/dashboard?model_id={model_id}`. Enforces model existence (404) and authorization (403 for non-owners).
 
+#### 3. Operator Frontend Web UI
+- **Path:** `GET /ui/` (and root redirect `GET /` -> `/ui/`)
+- **Type:** Static Single Page Application (SPA) mounted via FastAPI `StaticFiles`
+- **Static Assets:**
+  - `GET /ui/`: HTML5 dashboard entrypoint (`index.html`)
+  - `GET /ui/styles/dashboard.css`: Professional dark-mode MLOps dashboard stylesheet
+  - `GET /ui/src/App.js`: React 18 single-page application component tree
+  - `GET /ui/src/api.js`: REST API client integrating authentication, dashboard queries, evaluation triggers, and approval transitions
+  - `GET /ui/vendor/`: Self-contained offline React 18 production scripts
+- **Key Operator Capabilities:**
+  - Model inventory summary and telemetry benchmarks
+  - Model health score progress meters and system fleet health status
+  - Highlighted pending human approval counts and mandatory HITL advisory banner
+  - Interactive decision review cards with operator Approve / Reject actions
+  - On-demand AIMD evaluation trigger (`POST /api/spam-models/{model_id}/decisions/evaluate`)
+  - Recent decision audit trail table with decision timestamps and approval states
+  - Role-based access control enforcement (`ADMIN`, `ML_ENGINEER`, `VIEWER` read-only)
+  - CORS middleware enabled for decoupled local frontend development servers (e.g., port 3000)
 
 ---
 
