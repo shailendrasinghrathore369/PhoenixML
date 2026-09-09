@@ -15,6 +15,7 @@ from app.decisions.aimd import (
 from app.decisions.models import ApprovalStatus, DecisionLog
 from app.decisions.schemas import DecisionLogBase, DecisionLogCreate, DecisionLogRead
 from app.decisions.repository import DecisionLogRepository
+from app.decisions.service import DecisionService, AIMDDecisionService
 
 __all__ = [
     "AIMDAction",
@@ -30,5 +31,7 @@ __all__ = [
     "DecisionLogCreate",
     "DecisionLogRead",
     "DecisionLogRepository",
+    "DecisionService",
+    "AIMDDecisionService",
 ]
 

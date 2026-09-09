@@ -447,6 +447,14 @@ stateDiagram-v2
 - **Audit Integrity:** Recommendations cannot be silently altered or discarded; each record maintains an immutable snapshot of model condition and analytical signals at evaluation time.
 - **Model Cascade Integrity:** If a `RegisteredModel` is deleted, its associated `decision_logs` records are cleaned up via cascading deletion (`ON DELETE CASCADE`), preventing orphaned records.
 
+### 12.1.4 Decision Service Integration (`DecisionService`)
+
+The orchestration layer (`backend/app/decisions/service.py`) bridges analytical evaluation and persistent audit logging:
+- **Orchestration & Invocation:** Accepts operational context (`AIMDContext` or individual monitoring results) and invokes `AIMDDecisionEngine.evaluate()`.
+- **Mapping & Schema Validation:** Maps the resulting `AIMDRecommendation` into `DecisionLogCreate`, normalizing confidence ratings to numeric scores ($[0.0, 1.0]$), synthesizing diagnostic explanations, and attaching supporting signal payloads.
+- **Persistence:** Persists the recommendation to the database via `DecisionLogRepository`, defaulting `approval_status` to `PENDING` and strictly enforcing `requires_human_approval = True`.
+- **Clean Separation:** Pure domain decision rules remain strictly in `AIMDDecisionEngine`, the repository handles database access, and `DecisionService` coordinates orchestration and transaction rollback safety without duplicating rule evaluation.
+
 ---
 
 # 13. Future Evolution of AIMD
