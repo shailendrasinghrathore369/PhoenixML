@@ -58,7 +58,7 @@ class DecisionService:
 
     def __init__(
         self,
-        db: Optional[Session] = Depends(get_db),
+        db: Optional[Session] = None,
         repository: Optional[DecisionLogRepository] = None,
         engine: Optional[AIMDDecisionEngine] = None,
         model_repository: Optional[RegisteredModelRepository] = None,
@@ -418,3 +418,8 @@ class DecisionService:
 
 
 AIMDDecisionService = DecisionService
+ 
+ 
+def get_decision_service(db: Session = Depends(get_db)) -> DecisionService:
+    """FastAPI dependency provider for DecisionService."""
+    return DecisionService(db=db)

@@ -45,6 +45,10 @@ def create_app() -> FastAPI:
     # Register monitoring router
     from app.monitoring.router import router as monitoring_router
     app.include_router(monitoring_router, prefix="/api/spam-models", tags=["monitoring"])
+
+    # Register decisions router
+    from app.decisions.router import router as decisions_router
+    app.include_router(decisions_router, prefix="/api/spam-models", tags=["decisions"])
     return app
 
 app = create_app()
