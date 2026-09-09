@@ -196,3 +196,81 @@ def test_invalid_model_foreign_key_handling():
     with pytest.raises(IntegrityError):
         repo.create(obs_in)
     db.close()
+
+def test_repository_normalizes_naive_observed_at_on_get_by_id(test_model):
+    db = TestingSessionLocal()
+    repo = MonitoringObservationRepository(db)
+    
+    obs_id = uuid.uuid4()
+    naive_dt = datetime(2026, 9, 8, 10, 0, 0)
+    db_obs = MonitoringObservation(
+        id=obs_id,
+        model_id=test_model.id,
+        observed_at=naive_dt,
+        prediction_count=50,
+        positive_prediction_count=20,
+        negative_prediction_count=30,
+    )
+    db.add(db_obs)
+    db.commit()
+
+    retrieved = repo.get_by_id(obs_id)
+    assert retrieved is not None
+    assert retrieved.observed_at.tzinfo is not None
+    assert retrieved.observed_at.tzinfo == timezone.utc
+    assert retrieved.observed_at.year == 2026
+    assert retrieved.observed_at.hour == 10
+    db.close()
+
+def test_repository_normalizes_naive_observed_at_on_list_by_model(test_model):
+    db = TestingSessionLocal()
+    repo = MonitoringObservationRepository(db)
+    
+    obs_id = uuid.uuid4()
+    naive_dt = datetime(2026, 9, 8, 11, 30, 0)
+    db_obs = MonitoringObservation(
+        id=obs_id,
+        model_id=test_model.id,
+        observed_at=naive_dt,
+        prediction_count=25,
+        positive_prediction_count=10,
+        negative_prediction_count=15,
+    )
+    db.add(db_obs)
+    db.commit()
+
+    results = repo.list_by_model(test_model.id)
+    matched = [obs for obs in results if obs.id == obs_id]
+    assert len(matched) == 1
+    assert matched[0].observed_at.tzinfo is not None
+    assert matched[0].observed_at.tzinfo == timezone.utc
+    db.close()
+
+def test_repository_normalize_helper_handles_none_and_naive():
+    assert MonitoringObservationRepository._normalize_observed_at(None) is None
+
+    naive_dt = datetime(2026, 9, 8, 12, 0, 0)
+    mock_obs = MonitoringObservation(
+        id=uuid.uuid4(),
+        model_id=uuid.uuid4(),
+        observed_at=naive_dt,
+        prediction_count=10,
+        positive_prediction_count=5,
+        negative_prediction_count=5,
+    )
+    assert mock_obs.observed_at.tzinfo is None
+    normalized = MonitoringObservationRepository._normalize_observed_at(mock_obs)
+    assert normalized.observed_at.tzinfo is not None
+    assert normalized.observed_at.tzinfo == timezone.utc
+
+    aware_dt = datetime(2026, 9, 8, 12, 0, 0, tzinfo=timezone.utc)
+    mock_obs_aware = MonitoringObservation(
+        id=uuid.uuid4(),
+        model_id=uuid.uuid4(),
+        observed_at=aware_dt,
+        prediction_count=10,
+        positive_prediction_count=5,
+        negative_prediction_count=5,
+    )
+    normalized_aware = MonitoringObservationRepository._normalize_observed_at(mock_obs_aware)
+    assert normalized_aware.observed_at.tzinfo == timezone.utc
