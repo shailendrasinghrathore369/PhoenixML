@@ -83,3 +83,29 @@ def update_decision_approval(
         as_read_schema=True,
     )
 
+
+@router.post(
+    "/{model_id}/decisions/evaluate",
+    response_model=DecisionLogRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Trigger AIMD model evaluation",
+    description="Trigger an AIMD decision-support evaluation for a registered model based on its monitoring observations. Synthesizes health assessment, performance trends, and explainability signals, persisting a new recommendation requiring human approval.",
+)
+@router.post(
+    "/{model_id}/decisions",
+    response_model=DecisionLogRead,
+    status_code=status.HTTP_201_CREATED,
+    include_in_schema=False,
+)
+def trigger_model_evaluation(
+    model_id: uuid.UUID,
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ML_ENGINEER)),
+    service: DecisionService = Depends(get_decision_service),
+) -> DecisionLogRead:
+    return service.evaluate_model(
+        model_id=model_id,
+        user=current_user,
+        as_read_schema=True,
+    )
+
+

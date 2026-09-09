@@ -29,11 +29,12 @@ from app.decisions.schemas import (
 )
 from app.decisions.repository import DecisionLogRepository
 from app.models.repository import RegisteredModelRepository
+from app.models.monitoring_repository import MonitoringObservationRepository
 from app.monitoring.concept_drift import ConceptDriftAnalysis
 from app.monitoring.data_drift import DataDriftAnalysis
-from app.monitoring.health import HealthAssessmentResult
-from app.monitoring.performance import PerformanceAnalysis
-from app.monitoring.explainability import ExplanationResult
+from app.monitoring.health import HealthAssessor, HealthAssessmentResult, HealthStatus
+from app.monitoring.performance import PerformanceAnalyzer, PerformanceAnalysis, PerformanceStatus
+from app.monitoring.explainability import ExplainabilityAnalyzer, ExplanationResult
 
 
 AIMD_CONFIDENCE_SCORE_MAP: Dict[AIMDConfidence, float] = {
@@ -62,10 +63,12 @@ class DecisionService:
         repository: Optional[DecisionLogRepository] = None,
         engine: Optional[AIMDDecisionEngine] = None,
         model_repository: Optional[RegisteredModelRepository] = None,
+        obs_repository: Optional[MonitoringObservationRepository] = None,
     ):
         self.db = db
         self.repo = repository or (DecisionLogRepository(db) if db is not None else None)
         self.model_repo = model_repository or (RegisteredModelRepository(db) if db is not None else None)
+        self.obs_repo = obs_repository or (MonitoringObservationRepository(db) if db is not None else None)
         self.engine = engine or AIMDDecisionEngine()
 
     @staticmethod
@@ -528,6 +531,122 @@ class DecisionService:
             approval_status=ApprovalStatus.REJECTED,
             user=user,
             as_read_schema=as_read_schema,
+        )
+
+    def evaluate_model(
+        self,
+        model_id: uuid.UUID,
+        user: Optional[Union[User, uuid.UUID]] = None,
+        as_read_schema: bool = True,
+        historical_maintenance_context: Optional[Dict[str, Any]] = None,
+        prediction_confidence: Optional[float] = None,
+    ) -> Union[DecisionLog, DecisionLogRead]:
+        """
+        Evaluate operational monitoring observations for a registered model using the
+        analytical layers (HealthAssessor, PerformanceAnalyzer, ExplainabilityAnalyzer)
+        and the AIMD Decision Engine, persisting the recommendation to the DecisionLog repository.
+
+        Enforces:
+        - Model existence (404 Not Found if model does not exist)
+        - RBAC and ownership:
+            - ADMIN can evaluate any model
+            - ML_ENGINEER can only evaluate models they own (403 Forbidden if not owner)
+            - VIEWER cannot trigger evaluations (403 Forbidden under least-privilege policy)
+        - Invariants:
+            - Always initializes with requires_human_approval=True
+            - Always initializes with approval_status=ApprovalStatus.PENDING
+            - Pure analytical logic is delegated to existing domain assessors/analyzers/engine
+        """
+        # 1. Enforce RBAC: VIEWER cannot trigger evaluation
+        user_role = getattr(user, "role", None)
+        if user_role == UserRole.VIEWER or user_role == "VIEWER":
+            raise AuthorizationError(detail="Viewers are not authorized to trigger model evaluation")
+
+        # 2. Authorize model existence and ownership
+        model = self._get_and_authorize_model(model_id, user)
+
+        # 3. Verify observation repository is configured
+        if self.obs_repo is None:
+            raise RuntimeError("MonitoringObservationRepository is not configured for DecisionService")
+
+        # 4. Fetch monitoring observations for model (ordered newest-first by repo)
+        observations = self.obs_repo.list_by_model(model_id, skip=0, limit=1000)
+
+        # 5. Synthesize analytical context
+        if observations:
+            # Sort chronologically (oldest to newest) for performance trend analysis
+            sorted_obs = sorted(observations, key=lambda o: o.observed_at)
+            latest_obs = sorted_obs[-1]
+
+            health_assessor = HealthAssessor()
+            health_result = health_assessor.assess(
+                accuracy=latest_obs.accuracy,
+                precision=latest_obs.precision,
+                recall=latest_obs.recall,
+                f1_score=latest_obs.f1_score,
+            )
+
+            perf_analyzer = PerformanceAnalyzer()
+            perf_result = perf_analyzer.analyze(sorted_obs)
+
+            explainer = ExplainabilityAnalyzer()
+            expl_result = explainer.explain(
+                performance_analysis=perf_result,
+                health_assessment=health_result,
+            )
+
+            context = AIMDContext(
+                health_assessment=health_result,
+                performance_analysis=perf_result,
+                explainability_result=expl_result,
+                historical_maintenance_context=historical_maintenance_context,
+                prediction_confidence=prediction_confidence,
+            )
+        else:
+            # Handle zero observations: graceful insufficient data synthesis
+            health_assessor = HealthAssessor()
+            health_result = health_assessor.assess(None, None, None, None)
+
+            perf_analyzer = PerformanceAnalyzer()
+            perf_result = perf_analyzer.analyze([])
+
+            explainer = ExplainabilityAnalyzer()
+            expl_result = explainer.explain(
+                performance_analysis=perf_result,
+                health_assessment=health_result,
+            )
+
+            context = AIMDContext(
+                health_assessment=health_result,
+                performance_analysis=perf_result,
+                explainability_result=expl_result,
+                historical_maintenance_context=historical_maintenance_context,
+                prediction_confidence=prediction_confidence,
+            )
+
+        # 6. Evaluate and persist recommendation into DecisionLog
+        decision = self.evaluate_and_persist(model_id=model_id, context=context)
+
+        # 7. Return schema or ORM model as requested
+        if as_read_schema:
+            return DecisionLogRead.model_validate(decision)
+        return decision
+
+    def trigger_evaluation(
+        self,
+        model_id: uuid.UUID,
+        user: Optional[Union[User, uuid.UUID]] = None,
+        as_read_schema: bool = True,
+        historical_maintenance_context: Optional[Dict[str, Any]] = None,
+        prediction_confidence: Optional[float] = None,
+    ) -> Union[DecisionLog, DecisionLogRead]:
+        """Convenience alias for evaluate_model."""
+        return self.evaluate_model(
+            model_id=model_id,
+            user=user,
+            as_read_schema=as_read_schema,
+            historical_maintenance_context=historical_maintenance_context,
+            prediction_confidence=prediction_confidence,
         )
 
 

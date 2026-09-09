@@ -282,9 +282,10 @@ The Decision History & Recommendations API provides authenticated, role-based re
 
 ### Authorization & Access Control (RBAC)
 
-- **Allowed Roles:** `ADMIN`, `ML_ENGINEER`, `VIEWER`.
-- **Model Ownership:** Non-admin users (`ML_ENGINEER`, `VIEWER`) can only query decision history for models they own. Attempts to access decisions of models owned by others return `403 Forbidden`.
-- **Admin Privilege:** Users with role `ADMIN` have global read permissions across all registered models.
+- **Allowed Roles:** `ADMIN`, `ML_ENGINEER`, `VIEWER` (for read operations); `ADMIN`, `ML_ENGINEER` (for approval and evaluation operations).
+- **Model Ownership:** Non-admin users (`ML_ENGINEER`, `VIEWER`) can only query decision history for models they own. Attempts to access or modify decisions of models owned by others return `403 Forbidden`.
+- **Evaluation & Approval Permissions:** Only `ADMIN` and `ML_ENGINEER` (who own the target model) may update approval status or trigger model evaluations. Users with role `VIEWER` receive `403 Forbidden`.
+- **Admin Privilege:** Users with role `ADMIN` have global read and execution permissions across all registered models.
 - **Isolation & Integrity:** Requests specifying an invalid or nonexistent model or decision ID return `404 Not Found`. Cross-model access (querying a decision with an mismatched model ID) returns `404 Not Found`.
 
 | Method | Endpoint | Description |
@@ -292,6 +293,7 @@ The Decision History & Recommendations API provides authenticated, role-based re
 | GET | `/spam-models/{model_id}/decisions` | Retrieve paginated decision history for a model (newest first) |
 | GET | `/spam-models/{model_id}/decisions/{decision_id}` | Retrieve a specific decision log record for a model |
 | PATCH | `/spam-models/{model_id}/decisions/{decision_id}/approval` | Update human approval status of a decision (PENDING to APPROVED or REJECTED) |
+| POST | `/spam-models/{model_id}/decisions/evaluate` | Trigger AIMD evaluation across monitoring observations, persisting recommendation |
 
 ### Endpoints Specification
 
@@ -396,6 +398,41 @@ The Decision History & Recommendations API provides authenticated, role-based re
     },
     "requires_human_approval": true,
     "approval_status": "APPROVED"
+  }
+  ```
+
+#### 4. Trigger AIMD Model Evaluation
+- **Path:** `POST /api/spam-models/{model_id}/decisions/evaluate` (alias: `POST /api/spam-models/{model_id}/decisions`)
+- **Status Code:** `201 Created`
+- **Role Permissions:** `ADMIN`, `ML_ENGINEER` (model owner only). `VIEWER` and non-owner engineers receive `403 Forbidden`.
+- **Processing Pipeline:**
+  1. Retrieves historical monitoring observations for the model from `MonitoringObservationRepository`.
+  2. Synthesizes multi-source analytical context:
+     - **Health Assessment:** Calculates current health score and status (`healthy`, `warning`, `critical`, or `insufficient_data`) via `HealthAssessor` on the most recent observation.
+     - **Performance Trend Analysis:** Evaluates longitudinal metric trends (`improving`, `stable`, `degraded`) via `PerformanceAnalyzer` across chronologically sorted observations.
+     - **Operational Explainability:** Translates analytical signals into diagnostic summaries and primary drivers via `ExplainabilityAnalyzer`.
+     - **Graceful Zero-Observation Fallback:** If zero observations exist, synthesizes an insufficient-data context triggering a safe `HUMAN_REVIEW` recommendation.
+  3. Evaluates deterministic decision rules via `AIMDDecisionEngine`.
+  4. Automatically persists the resulting recommendation as a `DecisionLog` record with `requires_human_approval=True` and `approval_status=ApprovalStatus.PENDING`.
+- **Response Format (`DecisionLogRead`):**
+  ```json
+  {
+    "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "created_at": "2026-09-09T12:00:00Z",
+    "health_score": 93.5,
+    "health_status": "healthy",
+    "recommended_action": "CONTINUE_MONITORING",
+    "priority": "LOW",
+    "confidence": 0.9,
+    "rationale": "Model health and performance are within acceptable operational limits. No data drift or concept drift detected. Continue standard monitoring schedule.",
+    "explanation": "Healthy model performance: composite health score is 93.5/100 (healthy).",
+    "supporting_signals": [
+      "health_healthy(score=93.5)",
+      "performance_stable"
+    ],
+    "requires_human_approval": true,
+    "approval_status": "PENDING"
   }
   ```
 

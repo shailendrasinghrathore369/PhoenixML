@@ -495,6 +495,25 @@ Approval updates are strictly confined to `approval_status`. The schema and serv
 #### 4. Explicit Non-Autonomous Invariant
 > **CRITICAL ARCHITECTURAL GUARANTEE:** Transitioning an AIMD decision to `APPROVED` does **NOT** autonomously trigger retraining scripts, rollback model checkpoints, deploy replacement artifacts, or execute pipeline modifications. PhoenixML remains an MLOps decision-support platform; all downstream production maintenance actions require human execution.
 
+### 12.1.7 Observation-to-AIMD Model Evaluation Pipeline
+
+To bridge persisted monitoring telemetry with the AIMD decision engine, PhoenixML provides an end-to-end evaluation pipeline in `DecisionService.evaluate_model()`:
+
+1. **Telemetry Retrieval & Ordering:**
+   - Retrieves historical operational observations from `MonitoringObservationRepository`.
+   - Normalizes and sorts observations chronologically by `observed_at` to ensure robust time-series comparisons regardless of database insertion order.
+2. **Analytical Synthesis:**
+   - **Health Assessment:** `HealthAssessor.assess()` evaluates the most recent observation's classification metrics (F1, precision, recall, accuracy), computing a composite health score ($[0, 100]$) and status (`healthy`, `warning`, `critical`).
+   - **Performance Trends:** `PerformanceAnalyzer.analyze()` tracks longitudinal metric trajectories across observations (`improving`, `stable`, `degraded`).
+   - **Operational Explainability:** `ExplainabilityAnalyzer.explain()` correlates health, performance degradation, and drift signals into diagnostic explanations and primary operational factors.
+   - **Graceful Zero-Observation Handling:** When a model has no observations, the service synthesizes an `insufficient_data` context. The AIMD engine deterministically outputs a safe `HUMAN_REVIEW` recommendation (priority: `MEDIUM`, confidence: `INSUFFICIENT`).
+3. **Deterministic AIMD Evaluation:**
+   - Aggregates analytical outputs into `AIMDContext` and invokes `AIMDDecisionEngine.evaluate()`.
+4. **Audit Persistence & Human-in-the-Loop Safeguards:**
+   - Persists the generated recommendation into the `decision_logs` table via `DecisionLogRepository`.
+   - Strictly enforces `requires_human_approval = True` and initializes with `approval_status = ApprovalStatus.PENDING`.
+   - Exposed via authenticated REST endpoint: `POST /api/spam-models/{model_id}/decisions/evaluate` (RBAC: `ADMIN` global, `ML_ENGINEER` model owner; `VIEWER` forbidden).
+
 
 ---
 
