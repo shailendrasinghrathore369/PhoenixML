@@ -31,6 +31,10 @@ def create_app() -> FastAPI:
         return {"status": "ok", "project": settings.PROJECT_NAME}
         
     app.include_router(api_router, prefix="/api")
+
+    @app.get("/health", tags=["health"], include_in_schema=False)
+    def root_health_check() -> dict[str, str]:
+        return {"status": "ok", "project": settings.PROJECT_NAME}
     
     # Register auth router
     app.include_router(auth_router, prefix="/api/auth", tags=["auth"])

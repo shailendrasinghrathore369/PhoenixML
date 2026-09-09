@@ -169,20 +169,18 @@ The standardized response structure simplifies frontend integration and improves
 
 # 5. API Modules
 
-The PhoenixML API is organized into functional groups.
+The PhoenixML API is organized into functional groups exposed under the `/api` prefix.
 
 | Module | Base Endpoint | Purpose |
 |---------|---------------|---------|
-| Authentication | `/auth` | User login and registration |
-| Users | `/users` | User profile management |
-| Spam Models | `/spam-models` | Manage deployed models |
-| Monitoring | `/monitoring` | Store and retrieve monitoring metrics |
-| Drift Reports | `/drift-reports` | Access drift analysis |
-| Health Reports | `/health-reports` | Retrieve model health |
-| Recommendations | `/recommendations` | AIMD recommendations |
-| Dashboard | `/dashboard` | Dashboard statistics |
-| Reports | `/reports` | Generate reports |
-| Notifications | `/notifications` | User notifications |
+| Health Check | `/api/health` | Service liveness and operational health status |
+| Authentication | `/api/auth` | User login, registration, token refresh, and logout |
+| Users | `/api/users` | User profile retrieval and password management |
+| Spam Models | `/api/spam-models` | Model registration, inventory, and lifecycle management |
+| Monitoring | `/api/spam-models/{model_id}/monitoring` | Ingestion and retrieval of runtime monitoring metrics |
+| Decision History & AIMD | `/api/spam-models/{model_id}/decisions` | Deterministic AIMD evaluation, audit history, and human approval |
+| Dashboard | `/api/dashboard` | Fleet-wide and model-specific aggregate telemetry and health |
+| Operator Frontend | `/ui` | Interactive browser-based operator dashboard UI |
 
 # 6. API Endpoint Specifications
 
@@ -194,13 +192,14 @@ This section describes the primary REST API endpoints provided by PhoenixML. The
 
 ### Purpose
 
-The Authentication API manages user registration, login, and secure access to protected resources.
+The Authentication API manages user registration, credential authentication, JWT token issuance, session refresh, and logout.
 
 | Method | Endpoint | Description |
 |---------|----------|-------------|
-| POST | `/auth/register` | Register a new user |
-| POST | `/auth/login` | Authenticate user and issue JWT token |
-| GET | `/auth/profile` | Retrieve authenticated user profile |
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Authenticate credentials and issue JWT access & refresh tokens |
+| POST | `/api/auth/refresh` | Issue new access token using valid refresh token |
+| POST | `/api/auth/logout` | Invalidate current user session |
 
 ---
 
@@ -208,13 +207,13 @@ The Authentication API manages user registration, login, and secure access to pr
 
 ### Purpose
 
-The Users API allows authenticated users to manage their account information.
+The Users API allows authenticated users to inspect their profile and update credentials.
 
 | Method | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/users/{id}` | Retrieve user details |
-| PUT | `/users/{id}` | Update user profile |
-| DELETE | `/users/{id}` | Delete user account |
+| GET | `/api/users/me` | Retrieve authenticated user profile |
+| PATCH | `/api/users/me` | Update authenticated user profile attributes |
+| POST | `/api/users/me/change-password` | Update account password |
 
 ---
 
@@ -222,15 +221,15 @@ The Users API allows authenticated users to manage their account information.
 
 ### Purpose
 
-The Spam Models API manages deployed spam email detection models monitored by PhoenixML.
+The Spam Models API manages registered spam email detection models monitored by PhoenixML.
 
 | Method | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/spam-models` | Retrieve all registered models |
-| POST | `/spam-models` | Register a new model |
-| GET | `/spam-models/{id}` | Retrieve model details |
-| PUT | `/spam-models/{id}` | Update model information |
-| DELETE | `/spam-models/{id}` | Remove a model |
+| GET | `/api/spam-models` | Retrieve all registered models accessible to current user role |
+| POST | `/api/spam-models` | Register a new spam detection model (ADMIN, ML_ENGINEER) |
+| GET | `/api/spam-models/{model_id}` | Retrieve details for a specific registered model |
+| PUT | `/api/spam-models/{model_id}` | Update registered model metadata |
+| DELETE | `/api/spam-models/{model_id}` | Deregister/remove a model (cascades to telemetry and decisions) |
 
 ---
 
@@ -238,39 +237,34 @@ The Spam Models API manages deployed spam email detection models monitored by Ph
 
 ### Purpose
 
-The Monitoring API stores and retrieves runtime performance metrics for deployed spam detection models.
+The Monitoring API stores and retrieves runtime performance and telemetry metrics for registered spam detection models.
 
 | Method | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/monitoring` | Retrieve monitoring records |
-| POST | `/monitoring` | Store monitoring metrics |
-| GET | `/monitoring/{modelId}` | Retrieve monitoring history for a model |
+| GET | `/api/spam-models/{model_id}/monitoring` | Retrieve monitoring records for a model (supports pagination) |
+| POST | `/api/spam-models/{model_id}/monitoring` | Ingest a new monitoring observation record |
+| GET | `/api/spam-models/{model_id}/monitoring/{observation_id}` | Retrieve a specific monitoring observation |
+| DELETE | `/api/spam-models/{model_id}/monitoring/{observation_id}` | Remove a specific observation record |
 
 ---
 
-# 6.5 Drift Reports API
+# 6.5 Drift & Performance Analysis Pipeline
 
 ### Purpose
 
-The Drift Reports API provides access to drift detection results.
+Drift detection (feature drift, prediction drift, concept drift) and longitudinal performance trend analysis are executed directly by the analytical service layer upon stored monitoring observations.
 
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/drift-reports` | Retrieve all drift reports |
-| GET | `/drift-reports/{modelId}` | Retrieve drift reports for a model |
+Rather than requiring separate decoupled REST polling endpoints, drift metrics and performance degradation signals feed directly into the AIMD Decision Engine via `POST /api/spam-models/{model_id}/decisions/evaluate` and are surfaced on model cards and telemetry overviews via `GET /api/dashboard/{model_id}`.
 
 ---
 
-# 6.6 Health Reports API
+# 6.6 Health Assessment Pipeline
 
 ### Purpose
 
-The Health Reports API retrieves health assessment results generated for deployed models.
+Composite health scoring evaluates real-time operational health (healthy, warning, critical, or insufficient data) across ingested observation vectors.
 
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/health-reports` | Retrieve all health reports |
-| GET | `/health-reports/{modelId}` | Retrieve health reports for a model |
+Health status is calculated dynamically during AIMD recommendation evaluation (`POST /api/spam-models/{model_id}/decisions/evaluate`) and aggregated system-wide in dashboard summaries (`GET /api/dashboard`).
 
 ---
 
