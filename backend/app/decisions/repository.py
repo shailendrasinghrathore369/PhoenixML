@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
-from app.decisions.models import DecisionLog
+from app.decisions.models import ApprovalStatus, DecisionLog
 from app.decisions.schemas import DecisionLogCreate
 
 
@@ -58,6 +58,45 @@ class DecisionLogRepository:
             )
         ).scalar_one_or_none()
         if db_decision and db_decision.created_at.tzinfo is None:
+            db_decision.created_at = db_decision.created_at.replace(tzinfo=timezone.utc)
+        return db_decision
+
+    def get_by_id_and_model_for_update(
+        self, decision_id: uuid.UUID, model_id: uuid.UUID
+    ) -> Optional[DecisionLog]:
+        """
+        Retrieve a DecisionLog record by decision_id and model_id with row-level locking (FOR UPDATE).
+        """
+        db_decision = self.db.execute(
+            select(DecisionLog)
+            .where(
+                DecisionLog.id == decision_id,
+                DecisionLog.model_id == model_id,
+            )
+            .with_for_update()
+        ).scalar_one_or_none()
+        if db_decision and db_decision.created_at.tzinfo is None:
+            db_decision.created_at = db_decision.created_at.replace(tzinfo=timezone.utc)
+        return db_decision
+
+    def update_approval_status(
+        self,
+        decision_id: uuid.UUID,
+        model_id: uuid.UUID,
+        approval_status: ApprovalStatus,
+    ) -> Optional[DecisionLog]:
+        """
+        Update the approval status of a DecisionLog record, strictly preserving all other fields.
+        Commits the change, refreshes the record, ensures UTC timezone, and returns the updated entity.
+        """
+        db_decision = self.get_by_id_and_model_for_update(decision_id, model_id)
+        if not db_decision:
+            return None
+        db_decision.approval_status = approval_status
+        self.db.add(db_decision)
+        self.db.commit()
+        self.db.refresh(db_decision)
+        if db_decision.created_at.tzinfo is None:
             db_decision.created_at = db_decision.created_at.replace(tzinfo=timezone.utc)
         return db_decision
 

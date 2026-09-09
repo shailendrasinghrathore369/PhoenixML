@@ -416,6 +416,121 @@ class DecisionService:
             raise RuntimeError("DecisionLogRepository is not configured for DecisionService")
         return self.repo.delete(decision_id)
 
+    def update_approval_status(
+        self,
+        model_id: uuid.UUID,
+        decision_id: uuid.UUID,
+        approval_status: ApprovalStatus,
+        user: Optional[Union[User, uuid.UUID]] = None,
+        as_read_schema: bool = True,
+    ) -> Union[DecisionLog, DecisionLogRead]:
+        """
+        Update the human approval status of a decision log record.
+
+        Enforces:
+        - Model existence (404 if not found).
+        - Ownership and RBAC policies:
+            - ADMIN can operate across all models.
+            - ML_ENGINEER can only operate on models they own (403 if not owner).
+            - VIEWER is not authorized to approve/reject (403 Forbidden under least-privilege policy).
+        - Cross-model isolation: decision must belong to model_id (404 if not found).
+        - State transition rules:
+            - PENDING -> APPROVED (allowed)
+            - PENDING -> REJECTED (allowed)
+            - APPROVED -> APPROVED (idempotent 200)
+            - REJECTED -> REJECTED (idempotent 200)
+            - APPROVED -> REJECTED (rejected 400)
+            - REJECTED -> APPROVED (rejected 400)
+            - Finalized decisions cannot be re-opened to PENDING (rejected 400)
+        - Preserves all analytical and diagnostic fields.
+        """
+        if self.repo is None:
+            raise RuntimeError("DecisionLogRepository is not configured for DecisionService")
+
+        # 1. Enforce RBAC: VIEWER cannot approve/reject
+        user_role = getattr(user, "role", None)
+        if user_role == UserRole.VIEWER or user_role == "VIEWER":
+            raise AuthorizationError(detail="Viewers are not authorized to approve or reject decisions")
+
+        # 2. Authorize model ownership (ADMIN allowed; ML_ENGINEER owner allowed; others 403; nonexistent model 404)
+        model = self._get_and_authorize_model(model_id, user)
+
+        # 3. Retrieve decision with row-level locking for update
+        decision = self.repo.get_by_id_and_model_for_update(decision_id, model_id)
+        if not decision:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Decision not found for this model",
+            )
+
+        # 4. Check state transitions
+        if decision.approval_status == approval_status:
+            # Idempotent: status already matches
+            if as_read_schema:
+                return DecisionLogRead.model_validate(decision)
+            return decision
+
+        if decision.approval_status in (ApprovalStatus.APPROVED, ApprovalStatus.REJECTED):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot change approval status of a finalized decision (currently {decision.approval_status.value}).",
+            )
+
+        if approval_status == ApprovalStatus.PENDING:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot transition a decision back to PENDING.",
+            )
+
+        # 5. Apply update via repository
+        updated_decision = self.repo.update_approval_status(
+            decision_id=decision_id,
+            model_id=model_id,
+            approval_status=approval_status,
+        )
+        if not updated_decision:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Decision not found for this model",
+            )
+
+        if as_read_schema:
+            return DecisionLogRead.model_validate(updated_decision)
+        return updated_decision
+
+    def approve_decision(
+        self,
+        model_id: uuid.UUID,
+        decision_id: uuid.UUID,
+        user: Optional[Union[User, uuid.UUID]] = None,
+        as_read_schema: bool = True,
+    ) -> Union[DecisionLog, DecisionLogRead]:
+        """Convenience method to approve a decision."""
+        return self.update_approval_status(
+            model_id=model_id,
+            decision_id=decision_id,
+            approval_status=ApprovalStatus.APPROVED,
+            user=user,
+            as_read_schema=as_read_schema,
+        )
+
+    def reject_decision(
+        self,
+        model_id: uuid.UUID,
+        decision_id: uuid.UUID,
+        user: Optional[Union[User, uuid.UUID]] = None,
+        as_read_schema: bool = True,
+    ) -> Union[DecisionLog, DecisionLogRead]:
+        """Convenience method to reject a decision."""
+        return self.update_approval_status(
+            model_id=model_id,
+            decision_id=decision_id,
+            approval_status=ApprovalStatus.REJECTED,
+            user=user,
+            as_read_schema=as_read_schema,
+        )
+
+
 
 AIMDDecisionService = DecisionService
  

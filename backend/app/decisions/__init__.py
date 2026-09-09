@@ -18,6 +18,7 @@ from app.decisions.schemas import (
     DecisionLogCreate,
     DecisionLogRead,
     DecisionHistoryResponse,
+    DecisionApprovalUpdate,
 )
 from app.decisions.repository import DecisionLogRepository
 from app.decisions.service import DecisionService, AIMDDecisionService, get_decision_service
@@ -36,6 +37,7 @@ __all__ = [
     "DecisionLogCreate",
     "DecisionLogRead",
     "DecisionHistoryResponse",
+    "DecisionApprovalUpdate",
     "DecisionLogRepository",
     "DecisionService",
     "AIMDDecisionService",

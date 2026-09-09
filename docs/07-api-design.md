@@ -291,6 +291,7 @@ The Decision History & Recommendations API provides authenticated, role-based re
 |---------|----------|-------------|
 | GET | `/spam-models/{model_id}/decisions` | Retrieve paginated decision history for a model (newest first) |
 | GET | `/spam-models/{model_id}/decisions/{decision_id}` | Retrieve a specific decision log record for a model |
+| PATCH | `/spam-models/{model_id}/decisions/{decision_id}/approval` | Update human approval status of a decision (PENDING to APPROVED or REJECTED) |
 
 ### Endpoints Specification
 
@@ -354,9 +355,54 @@ The Decision History & Recommendations API provides authenticated, role-based re
   }
   ```
 
+#### 3. Update Decision Approval Status
+- **Path:** `PATCH /api/spam-models/{model_id}/decisions/{decision_id}/approval`
+- **Request Format (`DecisionApprovalUpdate`):**
+  ```json
+  {
+    "approval_status": "APPROVED"
+  }
+  ```
+  *(or `"approval_status": "REJECTED"`)*
+  *Note:* Extra fields in request payload are strictly forbidden (`extra="forbid"`).
+- **Authorization & RBAC Rules:**
+  - `ADMIN`: Authorized to approve or reject decisions for any registered model.
+  - `ML_ENGINEER`: Authorized to approve or reject decisions only on models they own. Attempts to modify other users' models return `403 Forbidden`.
+  - `VIEWER`: Under the safest least-privilege policy, Viewers are strictly read-only and return `403 Forbidden`.
+- **State Transition Rules:**
+  - `PENDING` $\rightarrow$ `APPROVED`: Allowed (HTTP 200).
+  - `PENDING` $\rightarrow$ `REJECTED`: Allowed (HTTP 200).
+  - `APPROVED` $\rightarrow$ `APPROVED`: Idempotent (HTTP 200).
+  - `REJECTED` $\rightarrow$ `REJECTED`: Idempotent (HTTP 200).
+  - `APPROVED` $\rightarrow$ `REJECTED`: Forbidden (HTTP 400). Finalized decisions cannot be changed.
+  - `REJECTED` $\rightarrow$ `APPROVED`: Forbidden (HTTP 400). Finalized decisions cannot be changed.
+  - Finalized $\rightarrow$ `PENDING`: Forbidden (HTTP 400). Finalized decisions cannot be re-opened.
+- **Response Format (`DecisionLogRead`):**
+  ```json
+  {
+    "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "created_at": "2026-09-09T12:00:00Z",
+    "health_score": 85.5,
+    "health_status": "healthy",
+    "recommended_action": "CONTINUE_MONITORING",
+    "priority": "LOW",
+    "confidence": 0.9,
+    "rationale": "All performance and drift signals remain within normal operational parameters.",
+    "explanation": "No significant metric drop or feature drift detected.",
+    "supporting_signals": {
+      "accuracy": 0.96,
+      "f1_score": 0.94
+    },
+    "requires_human_approval": true,
+    "approval_status": "APPROVED"
+  }
+  ```
+
 ### Design Principles & Invariants
-- **Read-Only Scope:** Exclusively serves historical query workloads. Approval, rejection, rollback execution, and autonomous actions are strictly excluded.
-- **Human-in-the-Loop Invariant:** All persisted decisions enforce `requires_human_approval: true` and start in `approval_status: PENDING`.
+- **Controlled Scope:** The PATCH endpoint only mutates `approval_status`. All other fields (`recommended_action`, `priority`, `confidence`, `rationale`, `explanation`, `supporting_signals`, `health_score`, `health_status`, `requires_human_approval`, `model_id`, `created_at`) remain immutable.
+- **Human Invariant:** PhoenixML strictly requires human approval before actions are performed.
+- **Non-Autonomous Execution:** Transitioning a recommendation to `APPROVED` does **NOT** autonomously execute retraining, rollback, deployment, or any other maintenance action. Downstream execution requires explicit human operational procedures.
 
 
 ---

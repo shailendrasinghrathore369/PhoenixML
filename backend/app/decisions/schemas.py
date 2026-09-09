@@ -76,3 +76,14 @@ class DecisionHistoryResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class DecisionApprovalUpdate(BaseModel):
+    """
+    Schema for updating the human approval status of a DecisionLog record.
+    Strictly forbids extra fields to ensure analytical and diagnostic fields cannot be altered.
+    """
+    approval_status: ApprovalStatus
+
+    model_config = ConfigDict(extra="forbid")
+
+

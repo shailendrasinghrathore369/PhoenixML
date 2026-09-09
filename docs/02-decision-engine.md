@@ -464,6 +464,38 @@ To support dashboard visualizations, historical timeline inspection, and future 
 - **Ownership & RBAC Enforcement:** Enforces model ownership policies at the service boundary. Model owners and system Administrators can inspect decision logs; unauthorized cross-user access attempts raise HTTP 403 (`AuthorizationError`), while nonexistent models or decisions raise HTTP 404 (`HTTPException`).
 - **Complete Schema Preservation:** Read models preserve all evaluation outputs, including action, priority, confidence rating, rationale, diagnostic explanation, corroborating signal payloads, `requires_human_approval`, and `approval_status`.
 
+### 12.1.6 Decision Approval Workflow Foundation
+
+To transition maintenance recommendations from initial review to operational resolution, PhoenixML establishes a controlled, auditable approval workflow:
+
+#### 1. Lifecycle States & Transitions
+- **Allowed States:** `PENDING`, `APPROVED`, `REJECTED`.
+- **Allowed Transitions:**
+  - `PENDING` $\rightarrow$ `APPROVED`: Authorized human review accepts the recommendation.
+  - `PENDING` $\rightarrow$ `REJECTED`: Authorized human review rejects the recommendation based on external context.
+  - `APPROVED` $\rightarrow$ `APPROVED`: Idempotent confirmation (returns current record without modification).
+  - `REJECTED` $\rightarrow$ `REJECTED`: Idempotent confirmation (returns current record without modification).
+- **Forbidden Transitions (Finalized Decisions Cannot Be Reversed):**
+  - `APPROVED` $\rightarrow$ `REJECTED`: Rejected (HTTP 400). Finalized approved decisions cannot be overwritten.
+  - `REJECTED` $\rightarrow$ `APPROVED`: Rejected (HTTP 400). Finalized rejected decisions cannot be overwritten.
+  - `APPROVED` / `REJECTED` $\rightarrow$ `PENDING`: Rejected (HTTP 400). Finalized decisions cannot be re-opened.
+
+#### 2. Role-Based Access Control (RBAC) Policies
+- **Administrator (`UserRole.ADMIN`):** Possesses global administrative authority to review, approve, or reject recommendations across all deployed models.
+- **ML Engineer (`UserRole.ML_ENGINEER`):** Authorized to review, approve, or reject recommendations strictly on models they own (`model.owner_id == user.id`). Cross-model approval attempts are denied with HTTP 403 (`AuthorizationError`).
+- **Viewer (`UserRole.VIEWER`):** Under the project's least-privilege safety policy, Viewers have strictly read-only visibility. Any attempt by a Viewer to modify approval status is denied with HTTP 403 (`AuthorizationError`).
+
+#### 3. Data Integrity & Field Immutability
+Approval updates are strictly confined to `approval_status`. The schema and service enforce that all analytical and diagnostic fields remain completely immutable:
+- `recommended_action`, `priority`, `confidence`
+- `rationale`, `explanation`, `supporting_signals`
+- `health_score`, `health_status`, `requires_human_approval`
+- `model_id`, `created_at`
+
+#### 4. Explicit Non-Autonomous Invariant
+> **CRITICAL ARCHITECTURAL GUARANTEE:** Transitioning an AIMD decision to `APPROVED` does **NOT** autonomously trigger retraining scripts, rollback model checkpoints, deploy replacement artifacts, or execute pipeline modifications. PhoenixML remains an MLOps decision-support platform; all downstream production maintenance actions require human execution.
+
+
 ---
 
 # 13. Future Evolution of AIMD

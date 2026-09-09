@@ -8,7 +8,11 @@ from fastapi import APIRouter, Depends, Query, status
 
 from app.auth.dependencies import require_roles
 from app.users.models import User, UserRole
-from app.decisions.schemas import DecisionLogRead, DecisionHistoryResponse
+from app.decisions.schemas import (
+    DecisionLogRead,
+    DecisionHistoryResponse,
+    DecisionApprovalUpdate,
+)
 from app.decisions.service import DecisionService, get_decision_service
 
 router = APIRouter()
@@ -55,3 +59,27 @@ def get_decision(
         user=current_user,
         as_read_schema=True,
     )
+
+
+@router.patch(
+    "/{model_id}/decisions/{decision_id}/approval",
+    response_model=DecisionLogRead,
+    status_code=status.HTTP_200_OK,
+    summary="Update decision approval status",
+    description="Update the human approval status of a specific AIMD decision record (PENDING to APPROVED or REJECTED).",
+)
+def update_decision_approval(
+    model_id: uuid.UUID,
+    decision_id: uuid.UUID,
+    approval_in: DecisionApprovalUpdate,
+    current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ML_ENGINEER, UserRole.VIEWER)),
+    service: DecisionService = Depends(get_decision_service),
+) -> DecisionLogRead:
+    return service.update_approval_status(
+        model_id=model_id,
+        decision_id=decision_id,
+        approval_status=approval_in.approval_status,
+        user=current_user,
+        as_read_schema=True,
+    )
+
