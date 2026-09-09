@@ -49,6 +49,10 @@ def create_app() -> FastAPI:
     # Register decisions router
     from app.decisions.router import router as decisions_router
     app.include_router(decisions_router, prefix="/api/spam-models", tags=["decisions"])
+
+    # Register dashboard router
+    from app.dashboard.router import router as dashboard_router
+    app.include_router(dashboard_router, prefix="/api", tags=["dashboard"])
     return app
 
 app = create_app()

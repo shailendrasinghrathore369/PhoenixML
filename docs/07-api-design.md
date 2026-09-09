@@ -448,11 +448,104 @@ The Decision History & Recommendations API provides authenticated, role-based re
 
 ### Purpose
 
-The Dashboard API provides consolidated statistics and summaries displayed on the system dashboard.
+The Dashboard API provides consolidated statistics, model inventory summaries, monitoring benchmarks, health distributions, and pending AIMD approval counts displayed on the system dashboard.
+
+### Authorization & Access Control (RBAC)
+
+- **Allowed Roles:** `ADMIN`, `ML_ENGINEER`, `VIEWER`.
+- **Scope Enforcement:**
+  - `ADMIN`: Receives global, fleet-wide metrics across all registered models (`scope = "global"`).
+  - `ML_ENGINEER` / `VIEWER`: Receives metrics strictly scoped to models they own (`scope = "user"`).
+  - When querying a specific model via `model_id` (`scope = "model"`), non-admin users can only inspect models they own. Cross-model attempts return `403 Forbidden`. Nonexistent models return `404 Not Found`.
 
 | Method | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/dashboard` | Retrieve dashboard overview |
+| GET | `/dashboard` | Retrieve consolidated dashboard overview (optional `model_id` query param) |
+| GET | `/dashboard/{model_id}` | Retrieve consolidated dashboard metrics for a single registered model |
+
+### Endpoints Specification
+
+#### 1. Retrieve Dashboard Overview
+- **Path:** `GET /api/dashboard`
+- **Query Parameters:**
+  - `model_id` (`uuid`, optional): Optional model ID to scope metrics to a single registered model.
+- **Status Code:** `200 OK`
+- **Response Format (`DashboardOverviewResponse`):**
+  ```json
+  {
+    "scope": "global",
+    "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "generated_at": "2026-09-09T15:00:00Z",
+    "models_summary": {
+      "total_models": 3,
+      "active_models": 2,
+      "development_models": 1,
+      "archived_models": 0
+    },
+    "monitoring_summary": {
+      "total_observations": 48,
+      "latest_observation_at": "2026-09-09T14:30:00Z",
+      "latest_accuracy": 0.95,
+      "latest_precision": 0.94,
+      "latest_recall": 0.93,
+      "latest_f1": 0.935
+    },
+    "health_summary": {
+      "healthy_count": 2,
+      "warning_count": 1,
+      "critical_count": 0,
+      "insufficient_data_count": 0,
+      "system_health_status": "WARNING",
+      "average_health_score": 82.3
+    },
+    "decision_summary": {
+      "total_decisions": 12,
+      "pending_approvals_count": 3,
+      "approved_count": 8,
+      "rejected_count": 1,
+      "critical_priority_count": 0,
+      "recent_decisions": [
+        {
+          "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+          "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "created_at": "2026-09-09T14:35:00Z",
+          "health_score": 75.0,
+          "health_status": "warning",
+          "recommended_action": "HUMAN_REVIEW",
+          "priority": "MEDIUM",
+          "confidence": 0.7,
+          "rationale": "Performance degradation observed without accompanying feature data drift or concept drift.",
+          "explanation": "Health score in warning zone (75.0/100).",
+          "supporting_signals": ["health_warning(score=75.0)"],
+          "requires_human_approval": true,
+          "approval_status": "PENDING"
+        }
+      ]
+    },
+    "model_cards": [
+      {
+        "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "name": "ProductionSpamDetector",
+        "status": "ACTIVE",
+        "framework": "Scikit-Learn",
+        "owner_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "observation_count": 24,
+        "latest_observation_at": "2026-09-09T14:30:00Z",
+        "latest_f1_score": 0.935,
+        "latest_health_score": 85.0,
+        "latest_health_status": "healthy",
+        "latest_decision": null,
+        "pending_decisions_count": 1
+      }
+    ]
+  }
+  ```
+
+#### 2. Retrieve Model Dashboard Overview
+- **Path:** `GET /api/dashboard/{model_id}`
+- **Status Code:** `200 OK`
+- **Behavior:** Identical to `/api/dashboard?model_id={model_id}`. Enforces model existence (404) and authorization (403 for non-owners).
+
 
 ---
 
