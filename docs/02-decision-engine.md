@@ -455,6 +455,15 @@ The orchestration layer (`backend/app/decisions/service.py`) bridges analytical 
 - **Persistence:** Persists the recommendation to the database via `DecisionLogRepository`, defaulting `approval_status` to `PENDING` and strictly enforcing `requires_human_approval = True`.
 - **Clean Separation:** Pure domain decision rules remain strictly in `AIMDDecisionEngine`, the repository handles database access, and `DecisionService` coordinates orchestration and transaction rollback safety without duplicating rule evaluation.
 
+### 12.1.5 Decision History Read and Query Service
+
+To support dashboard visualizations, historical timeline inspection, and future decision-history REST APIs, the decision layer provides a dedicated read and query interface on `DecisionService`:
+- **Single Decision Retrieval (`get_decision` / `get_decision_for_model`):** Retrieves individual decision records by primary key with model-scoping and authorization checks.
+- **Model-Scoped Decision Listing (`list_decisions_for_model` / `list_decisions`):** Lists historical recommendations for a specified registered model ordered chronologically (**newest first**).
+- **Pagination & Aggregation (`get_decision_history`):** Supports offset (`skip`) and page size (`limit`) pagination alongside total decision counts (`count_decisions_for_model`), returning structured `DecisionHistoryResponse` payloads consumable by UI dashboards.
+- **Ownership & RBAC Enforcement:** Enforces model ownership policies at the service boundary. Model owners and system Administrators can inspect decision logs; unauthorized cross-user access attempts raise HTTP 403 (`AuthorizationError`), while nonexistent models or decisions raise HTTP 404 (`HTTPException`).
+- **Complete Schema Preservation:** Read models preserve all evaluation outputs, including action, priority, confidence rating, rationale, diagnostic explanation, corroborating signal payloads, `requires_human_approval`, and `approval_status`.
+
 ---
 
 # 13. Future Evolution of AIMD

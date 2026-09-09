@@ -48,6 +48,19 @@ class DecisionLogRepository:
             db_decision.created_at = db_decision.created_at.replace(tzinfo=timezone.utc)
         return db_decision
 
+    def get_by_id_and_model(
+        self, decision_id: uuid.UUID, model_id: uuid.UUID
+    ) -> Optional[DecisionLog]:
+        db_decision = self.db.execute(
+            select(DecisionLog).where(
+                DecisionLog.id == decision_id,
+                DecisionLog.model_id == model_id,
+            )
+        ).scalar_one_or_none()
+        if db_decision and db_decision.created_at.tzinfo is None:
+            db_decision.created_at = db_decision.created_at.replace(tzinfo=timezone.utc)
+        return db_decision
+
     def list_by_model(
         self, model_id: uuid.UUID, skip: int = 0, limit: int = 100
     ) -> Sequence[DecisionLog]:

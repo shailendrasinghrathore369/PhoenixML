@@ -13,7 +13,12 @@ from app.decisions.aimd import (
     AIMDDecisionEngine,
 )
 from app.decisions.models import ApprovalStatus, DecisionLog
-from app.decisions.schemas import DecisionLogBase, DecisionLogCreate, DecisionLogRead
+from app.decisions.schemas import (
+    DecisionLogBase,
+    DecisionLogCreate,
+    DecisionLogRead,
+    DecisionHistoryResponse,
+)
 from app.decisions.repository import DecisionLogRepository
 from app.decisions.service import DecisionService, AIMDDecisionService
 
@@ -30,6 +35,7 @@ __all__ = [
     "DecisionLogBase",
     "DecisionLogCreate",
     "DecisionLogRead",
+    "DecisionHistoryResponse",
     "DecisionLogRepository",
     "DecisionService",
     "AIMDDecisionService",

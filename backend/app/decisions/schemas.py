@@ -1,7 +1,7 @@
 import uuid
 import math
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional, Any, List
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from app.decisions.aimd import AIMDAction, AIMDPriority
@@ -65,3 +65,14 @@ class DecisionLogRead(DecisionLogBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DecisionHistoryResponse(BaseModel):
+    model_id: uuid.UUID
+    total: int
+    skip: int
+    limit: int
+    items: List[DecisionLogRead]
+
+    model_config = ConfigDict(from_attributes=True)
+
