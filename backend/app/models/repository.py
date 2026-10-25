@@ -28,6 +28,13 @@ class RegisteredModelRepository:
     def get_by_id(self, model_id: uuid.UUID) -> Optional[RegisteredModel]:
         return self.session.get(RegisteredModel, model_id)
 
+    def get_by_name(self, name: str, owner_id: Optional[uuid.UUID] = None) -> Optional[RegisteredModel]:
+        stmt = select(RegisteredModel).where(RegisteredModel.name == name)
+        if owner_id:
+            stmt = stmt.where(RegisteredModel.owner_id == owner_id)
+        stmt = stmt.order_by(RegisteredModel.created_at.desc())
+        return self.session.execute(stmt).scalars().first()
+
     def list(self, skip: int = 0, limit: int = 100, owner_id: Optional[uuid.UUID] = None) -> Sequence[RegisteredModel]:
         stmt = select(RegisteredModel)
         if owner_id:

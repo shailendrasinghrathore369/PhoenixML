@@ -26,12 +26,26 @@ from app.decisions.schemas import (
     DecisionLogCreate,
     DecisionLogRead,
     DecisionHistoryResponse,
+    ModelEvaluationRequest,
+    DataDriftEvaluationInput,
+    ConceptDriftEvaluationInput,
 )
 from app.decisions.repository import DecisionLogRepository
 from app.models.repository import RegisteredModelRepository
 from app.models.monitoring_repository import MonitoringObservationRepository
-from app.monitoring.concept_drift import ConceptDriftAnalysis
-from app.monitoring.data_drift import DataDriftAnalysis
+from app.monitoring.concept_drift import (
+    ConceptDriftAnalysis,
+    ConceptDriftDetector,
+    ConceptDriftStatus,
+    LabeledWindow,
+    ConceptDriftConfiguration,
+)
+from app.monitoring.data_drift import (
+    DataDriftAnalysis,
+    DataDriftDetector,
+    FeatureDistribution,
+    DataDriftConfiguration,
+)
 from app.monitoring.health import HealthAssessor, HealthAssessmentResult, HealthStatus
 from app.monitoring.performance import PerformanceAnalyzer, PerformanceAnalysis, PerformanceStatus
 from app.monitoring.explainability import ExplainabilityAnalyzer, ExplanationResult
@@ -64,12 +78,16 @@ class DecisionService:
         engine: Optional[AIMDDecisionEngine] = None,
         model_repository: Optional[RegisteredModelRepository] = None,
         obs_repository: Optional[MonitoringObservationRepository] = None,
+        data_drift_detector: Optional[DataDriftDetector] = None,
+        concept_drift_detector: Optional[ConceptDriftDetector] = None,
     ):
         self.db = db
         self.repo = repository or (DecisionLogRepository(db) if db is not None else None)
         self.model_repo = model_repository or (RegisteredModelRepository(db) if db is not None else None)
         self.obs_repo = obs_repository or (MonitoringObservationRepository(db) if db is not None else None)
         self.engine = engine or AIMDDecisionEngine()
+        self.data_drift_detector = data_drift_detector
+        self.concept_drift_detector = concept_drift_detector
 
     @staticmethod
     def _map_confidence(
@@ -540,11 +558,20 @@ class DecisionService:
         as_read_schema: bool = True,
         historical_maintenance_context: Optional[Dict[str, Any]] = None,
         prediction_confidence: Optional[float] = None,
+        evaluation_request: Optional[ModelEvaluationRequest] = None,
+        features: Optional[List[FeatureDistribution]] = None,
+        reference_window: Optional[LabeledWindow] = None,
+        current_window: Optional[LabeledWindow] = None,
+        data_drift_analysis: Optional[DataDriftAnalysis] = None,
+        concept_drift_analysis: Optional[ConceptDriftAnalysis] = None,
+        data_drift_config: Optional[DataDriftConfiguration] = None,
+        concept_drift_config: Optional[ConceptDriftConfiguration] = None,
     ) -> Union[DecisionLog, DecisionLogRead]:
         """
-        Evaluate operational monitoring observations for a registered model using the
-        analytical layers (HealthAssessor, PerformanceAnalyzer, ExplainabilityAnalyzer)
-        and the AIMD Decision Engine, persisting the recommendation to the DecisionLog repository.
+        Evaluate operational monitoring observations and drift signals for a registered model
+        using the analytical layers (HealthAssessor, PerformanceAnalyzer, DataDriftDetector,
+        ConceptDriftDetector, ExplainabilityAnalyzer) and the AIMD Decision Engine, persisting
+        the recommendation to the DecisionLog repository.
 
         Enforces:
         - Model existence (404 Not Found if model does not exist)
@@ -555,7 +582,7 @@ class DecisionService:
         - Invariants:
             - Always initializes with requires_human_approval=True
             - Always initializes with approval_status=ApprovalStatus.PENDING
-            - Pure analytical logic is delegated to existing domain assessors/analyzers/engine
+            - Pure analytical logic is delegated to existing domain assessors/analyzers/detectors/engine
         """
         # 1. Enforce RBAC: VIEWER cannot trigger evaluation
         user_role = getattr(user, "role", None)
@@ -569,10 +596,71 @@ class DecisionService:
         if self.obs_repo is None:
             raise RuntimeError("MonitoringObservationRepository is not configured for DecisionService")
 
-        # 4. Fetch monitoring observations for model (ordered newest-first by repo)
+        # 4. Resolve drift inputs and operational context from evaluation_request if provided
+        if evaluation_request is not None:
+            if features is None:
+                if evaluation_request.features is not None:
+                    features = evaluation_request.features
+                elif evaluation_request.data_drift is not None:
+                    features = evaluation_request.data_drift.features
+
+            if data_drift_config is None:
+                if evaluation_request.data_drift_config is not None:
+                    data_drift_config = evaluation_request.data_drift_config
+                elif evaluation_request.data_drift is not None and evaluation_request.data_drift.config is not None:
+                    data_drift_config = evaluation_request.data_drift.config
+
+            if reference_window is None:
+                if evaluation_request.reference_window is not None:
+                    reference_window = evaluation_request.reference_window
+                elif evaluation_request.concept_drift is not None:
+                    reference_window = evaluation_request.concept_drift.reference_window
+
+            if current_window is None:
+                if evaluation_request.current_window is not None:
+                    current_window = evaluation_request.current_window
+                elif evaluation_request.concept_drift is not None:
+                    current_window = evaluation_request.concept_drift.current_window
+
+            if concept_drift_config is None:
+                if evaluation_request.concept_drift_config is not None:
+                    concept_drift_config = evaluation_request.concept_drift_config
+                elif evaluation_request.concept_drift is not None and evaluation_request.concept_drift.config is not None:
+                    concept_drift_config = evaluation_request.concept_drift.config
+
+            if historical_maintenance_context is None:
+                historical_maintenance_context = evaluation_request.historical_maintenance_context
+
+            if prediction_confidence is None:
+                prediction_confidence = evaluation_request.prediction_confidence
+
+        # 5. Run Data Drift detection if inputs provided and analysis not directly supplied
+        if data_drift_analysis is None and features is not None:
+            dd_detector = self.data_drift_detector or DataDriftDetector(config=data_drift_config)
+            data_drift_analysis = dd_detector.analyze(features)
+
+        # 6. Run Concept Drift detection if inputs provided and analysis not directly supplied
+        if concept_drift_analysis is None:
+            if reference_window is not None and current_window is not None:
+                cd_detector = self.concept_drift_detector or ConceptDriftDetector(config=concept_drift_config)
+                concept_drift_analysis = cd_detector.analyze(reference_window, current_window)
+            elif reference_window is not None or current_window is not None:
+                ref_len = len(reference_window.y_true) if (reference_window and reference_window.y_true is not None) else 0
+                cur_len = len(current_window.y_true) if (current_window and current_window.y_true is not None) else 0
+                concept_drift_analysis = ConceptDriftAnalysis(
+                    status=ConceptDriftStatus.INSUFFICIENT_DATA,
+                    drift_detected=None,
+                    reference_sample_size=ref_len,
+                    current_sample_size=cur_len,
+                    metric_results=[],
+                    drifted_metrics=[],
+                    summary="Insufficient labeled sample observations available to evaluate concept drift.",
+                )
+
+        # 7. Fetch monitoring observations for model (ordered newest-first by repo)
         observations = self.obs_repo.list_by_model(model_id, skip=0, limit=1000)
 
-        # 5. Synthesize analytical context
+        # 8. Synthesize analytical context
         if observations:
             # Sort chronologically (oldest to newest) for performance trend analysis
             sorted_obs = sorted(observations, key=lambda o: o.observed_at)
@@ -588,20 +676,6 @@ class DecisionService:
 
             perf_analyzer = PerformanceAnalyzer()
             perf_result = perf_analyzer.analyze(sorted_obs)
-
-            explainer = ExplainabilityAnalyzer()
-            expl_result = explainer.explain(
-                performance_analysis=perf_result,
-                health_assessment=health_result,
-            )
-
-            context = AIMDContext(
-                health_assessment=health_result,
-                performance_analysis=perf_result,
-                explainability_result=expl_result,
-                historical_maintenance_context=historical_maintenance_context,
-                prediction_confidence=prediction_confidence,
-            )
         else:
             # Handle zero observations: graceful insufficient data synthesis
             health_assessor = HealthAssessor()
@@ -610,24 +684,28 @@ class DecisionService:
             perf_analyzer = PerformanceAnalyzer()
             perf_result = perf_analyzer.analyze([])
 
-            explainer = ExplainabilityAnalyzer()
-            expl_result = explainer.explain(
-                performance_analysis=perf_result,
-                health_assessment=health_result,
-            )
+        explainer = ExplainabilityAnalyzer()
+        expl_result = explainer.explain(
+            performance_analysis=perf_result,
+            health_assessment=health_result,
+            data_drift_analysis=data_drift_analysis,
+            concept_drift_analysis=concept_drift_analysis,
+        )
 
-            context = AIMDContext(
-                health_assessment=health_result,
-                performance_analysis=perf_result,
-                explainability_result=expl_result,
-                historical_maintenance_context=historical_maintenance_context,
-                prediction_confidence=prediction_confidence,
-            )
+        context = AIMDContext(
+            health_assessment=health_result,
+            performance_analysis=perf_result,
+            data_drift_analysis=data_drift_analysis,
+            concept_drift_analysis=concept_drift_analysis,
+            explainability_result=expl_result,
+            historical_maintenance_context=historical_maintenance_context,
+            prediction_confidence=prediction_confidence,
+        )
 
-        # 6. Evaluate and persist recommendation into DecisionLog
+        # 9. Evaluate and persist recommendation into DecisionLog
         decision = self.evaluate_and_persist(model_id=model_id, context=context)
 
-        # 7. Return schema or ORM model as requested
+        # 10. Return schema or ORM model as requested
         if as_read_schema:
             return DecisionLogRead.model_validate(decision)
         return decision
@@ -639,6 +717,8 @@ class DecisionService:
         as_read_schema: bool = True,
         historical_maintenance_context: Optional[Dict[str, Any]] = None,
         prediction_confidence: Optional[float] = None,
+        evaluation_request: Optional[ModelEvaluationRequest] = None,
+        **kwargs,
     ) -> Union[DecisionLog, DecisionLogRead]:
         """Convenience alias for evaluate_model."""
         return self.evaluate_model(
@@ -647,6 +727,8 @@ class DecisionService:
             as_read_schema=as_read_schema,
             historical_maintenance_context=historical_maintenance_context,
             prediction_confidence=prediction_confidence,
+            evaluation_request=evaluation_request,
+            **kwargs,
         )
 
 

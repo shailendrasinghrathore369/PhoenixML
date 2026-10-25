@@ -4,6 +4,7 @@ Provides authenticated, role-based read access to model maintenance recommendati
 """
 
 import uuid
+from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
 
 from app.auth.dependencies import require_roles
@@ -12,6 +13,7 @@ from app.decisions.schemas import (
     DecisionLogRead,
     DecisionHistoryResponse,
     DecisionApprovalUpdate,
+    ModelEvaluationRequest,
 )
 from app.decisions.service import DecisionService, get_decision_service
 
@@ -89,7 +91,7 @@ def update_decision_approval(
     response_model=DecisionLogRead,
     status_code=status.HTTP_201_CREATED,
     summary="Trigger AIMD model evaluation",
-    description="Trigger an AIMD decision-support evaluation for a registered model based on its monitoring observations. Synthesizes health assessment, performance trends, and explainability signals, persisting a new recommendation requiring human approval.",
+    description="Trigger an AIMD decision-support evaluation for a registered model based on its monitoring observations and optional feature/concept drift inputs. Synthesizes health assessment, performance trends, drift reports, and explainability signals, persisting a new recommendation requiring human approval.",
 )
 @router.post(
     "/{model_id}/decisions",
@@ -99,6 +101,7 @@ def update_decision_approval(
 )
 def trigger_model_evaluation(
     model_id: uuid.UUID,
+    evaluation_in: Optional[ModelEvaluationRequest] = None,
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ML_ENGINEER)),
     service: DecisionService = Depends(get_decision_service),
 ) -> DecisionLogRead:
@@ -106,6 +109,7 @@ def trigger_model_evaluation(
         model_id=model_id,
         user=current_user,
         as_read_schema=True,
+        evaluation_request=evaluation_in,
     )
 
 

@@ -42,10 +42,15 @@ def create_app() -> FastAPI:
     # Register users router
     from app.users.router import router as users_router
     app.include_router(users_router, prefix="/api/users", tags=["users"])
+    
     # Register models router
     from app.models.router import router as models_router
     app.include_router(models_router, prefix="/api/spam-models", tags=["spam-models"])
     
+    # Register reference model inference router
+    from app.models.inference_router import router as inference_router
+    app.include_router(inference_router, prefix="/api/spam-models", tags=["inference"])
+
     # Register monitoring router
     from app.monitoring.router import router as monitoring_router
     app.include_router(monitoring_router, prefix="/api/spam-models", tags=["monitoring"])

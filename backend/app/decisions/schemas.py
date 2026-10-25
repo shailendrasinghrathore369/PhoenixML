@@ -1,11 +1,19 @@
 import uuid
 import math
 from datetime import datetime
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from app.decisions.aimd import AIMDAction, AIMDPriority
 from app.decisions.models import ApprovalStatus
+from app.monitoring.data_drift import (
+    FeatureDistribution,
+    DataDriftConfiguration,
+)
+from app.monitoring.concept_drift import (
+    LabeledWindow,
+    ConceptDriftConfiguration,
+)
 
 
 class DecisionLogBase(BaseModel):
@@ -85,5 +93,40 @@ class DecisionApprovalUpdate(BaseModel):
     approval_status: ApprovalStatus
 
     model_config = ConfigDict(extra="forbid")
+
+
+class DataDriftEvaluationInput(BaseModel):
+    """
+    Payload for evaluating feature/data drift in a runtime evaluation request.
+    """
+    features: List[FeatureDistribution]
+    config: Optional[DataDriftConfiguration] = None
+
+
+class ConceptDriftEvaluationInput(BaseModel):
+    """
+    Payload for evaluating concept drift across labeled monitoring windows.
+    """
+    reference_window: LabeledWindow
+    current_window: LabeledWindow
+    config: Optional[ConceptDriftConfiguration] = None
+
+
+class ModelEvaluationRequest(BaseModel):
+    """
+    Optional payload for runtime model evaluation requests, providing
+    feature distributions for data drift detection and/or labeled validation windows
+    for concept drift detection, alongside optional operational context.
+    """
+    data_drift: Optional[DataDriftEvaluationInput] = None
+    concept_drift: Optional[ConceptDriftEvaluationInput] = None
+    features: Optional[List[FeatureDistribution]] = None
+    reference_window: Optional[LabeledWindow] = None
+    current_window: Optional[LabeledWindow] = None
+    data_drift_config: Optional[DataDriftConfiguration] = None
+    concept_drift_config: Optional[ConceptDriftConfiguration] = None
+    historical_maintenance_context: Optional[Dict[str, Any]] = None
+    prediction_confidence: Optional[float] = None
+
 
 
