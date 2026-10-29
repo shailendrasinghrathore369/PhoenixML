@@ -55,23 +55,48 @@ function getPriorityClass(priority) {
 }
 
 /**
- * Login Screen Component
+ * Professional Login Screen Component
  */
-function LoginScreen({ onLoginSuccess }) {
-  const [username, setUsername] = useState('admin@phoenixml.io');
-  const [password, setPassword] = useState('AdminSecurePass123!');
+function LoginScreen({
+  onLoginSuccess,
+  onSwitchToSignup,
+  sessionExpired = false,
+  initialMessage = null,
+  initialMessageType = 'info',
+  prefillUsername = '',
+}) {
+  const [username, setUsername] = useState(prefillUsername);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Update username if prefill changes (e.g. following account creation)
+  useEffect(() => {
+    if (prefillUsername) {
+      setUsername(prefillUsername);
+    }
+  }, [prefillUsername]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
+      setError('Please enter your email or username.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await api.login(username, password);
+      const res = await api.login(trimmedUsername, password);
       onLoginSuccess(res.user);
     } catch (err) {
-      setError(err.message || 'Login failed. Please check credentials.');
+      setError(err.message || 'Login failed. Please verify your credentials and try again.');
     } finally {
       setLoading(false);
     }
@@ -86,42 +111,270 @@ function LoginScreen({ onLoginSuccess }) {
         h('h1', { className: 'brand-title', style: { fontSize: '1.5rem', marginBottom: '0.25rem' } }, 'PhoenixML'),
         h('p', { className: 'brand-subtitle' }, 'MLOps Decision-Support Platform')
       ),
-      error && h('div', { className: 'alert alert-error', style: { marginBottom: '1.5rem' } }, error),
+
+      // Status notifications & alerts
+      error && h('div', { className: 'alert alert-error', style: { marginBottom: '1.25rem' } },
+        h('span', null, error)
+      ),
+
+      !error && sessionExpired && h('div', { className: 'alert alert-warning', style: { marginBottom: '1.25rem' } },
+        h('span', null, 'Your session has expired. Please sign in again.')
+      ),
+
+      !error && !sessionExpired && initialMessage && h('div', {
+        className: `alert ${initialMessageType === 'success' ? 'alert-success' : 'alert-info'}`,
+        style: { marginBottom: '1.25rem' }
+      },
+        h('span', null, initialMessage)
+      ),
+
+      !error && !sessionExpired && !initialMessage && h('div', { className: 'auth-notice' },
+        'Please sign in to continue.'
+      ),
+
       h('form', { onSubmit: handleSubmit },
         h('div', { className: 'form-group' },
-          h('label', { className: 'form-label' }, 'Username / Email'),
+          h('label', { className: 'form-label', htmlFor: 'login-username' }, 'Email or Username'),
           h('input', {
+            id: 'login-username',
             type: 'text',
             className: 'form-input',
             value: username,
             onChange: (e) => setUsername(e.target.value),
             required: true,
-            placeholder: 'admin@phoenixml.io',
+            placeholder: 'Enter your email or username',
+            autoComplete: 'username',
+            autoFocus: !prefillUsername,
           })
         ),
+
         h('div', { className: 'form-group' },
-          h('label', { className: 'form-label' }, 'Password'),
-          h('input', {
-            type: 'password',
-            className: 'form-input',
-            value: password,
-            onChange: (e) => setPassword(e.target.value),
-            required: true,
-            placeholder: '••••••••',
-          })
+          h('label', { className: 'form-label', htmlFor: 'login-password' }, 'Password'),
+          h('div', { className: 'password-input-wrapper' },
+            h('input', {
+              id: 'login-password',
+              type: showPassword ? 'text' : 'password',
+              className: 'form-input',
+              value: password,
+              onChange: (e) => setPassword(e.target.value),
+              required: true,
+              placeholder: 'Enter your password',
+              autoComplete: 'current-password',
+              autoFocus: !!prefillUsername,
+            }),
+            h('button', {
+              type: 'button',
+              className: 'password-toggle-btn',
+              onClick: () => setShowPassword(!showPassword),
+              title: showPassword ? 'Hide password' : 'Show password',
+              tabIndex: -1,
+            }, showPassword ? 'Hide' : 'Show')
+          )
         ),
+
         h('button', {
           type: 'submit',
           className: 'btn btn-primary',
           style: { width: '100%', justifyContent: 'center', padding: '0.75rem', marginTop: '0.5rem' },
           disabled: loading,
-        }, loading ? 'Authenticating...' : 'Sign In to Dashboard')
+        },
+          loading && h('span', { className: 'spinner-inline' }),
+          loading ? 'Signing In...' : 'Sign In'
+        )
       ),
-      h('div', { className: 'login-footer-hint' },
-        h('p', { style: { fontWeight: '600', marginBottom: '0.25rem' } }, 'Pre-configured Test Roles:'),
-        h('p', null, 'Admin: admin@phoenixml.io'),
-        h('p', null, 'ML Engineer: engineer@phoenixml.io'),
-        h('p', null, 'Viewer: viewer@phoenixml.io')
+
+      h('div', { className: 'auth-footer' },
+        h('span', null, "Don't have an account?"),
+        h('button', {
+          type: 'button',
+          className: 'auth-link',
+          onClick: onSwitchToSignup,
+        }, 'Sign Up')
+      )
+    )
+  );
+}
+
+/**
+ * Professional Registration Screen Component
+ */
+function SignupScreen({ onSignupSuccess, onSwitchToLogin }) {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+
+    // Client-side validations
+    if (!trimmedUsername) {
+      setError('Username is required.');
+      return;
+    }
+    if (trimmedUsername.length < 3) {
+      setError('Username must be at least 3 characters long.');
+      return;
+    }
+    if (trimmedUsername.length > 50) {
+      setError('Username must be 50 characters or less.');
+      return;
+    }
+    if (!trimmedEmail) {
+      setError('Email address is required.');
+      return;
+    }
+    if (!password) {
+      setError('Password is required.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match. Please verify your password confirmation.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await api.register({
+        username: trimmedUsername,
+        email: trimmedEmail,
+        password,
+      });
+
+      const message = res?.message || 'Account created successfully! Please sign in.';
+      onSignupSuccess(res?.user, message, trimmedUsername);
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please check your information and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return h('div', { className: 'login-container' },
+    h('div', { className: 'login-card' },
+      h('div', { className: 'login-header' },
+        h('div', { style: { display: 'flex', justifyContent: 'center', marginBottom: '1rem' } },
+          h('div', { className: 'brand-icon', style: { width: '48px', height: '48px', fontSize: '1.5rem' } }, 'P')
+        ),
+        h('h1', { className: 'brand-title', style: { fontSize: '1.5rem', marginBottom: '0.25rem' } }, 'Create Account'),
+        h('p', { className: 'brand-subtitle' }, 'Register for PhoenixML Decision Support')
+      ),
+
+      error && h('div', { className: 'alert alert-error', style: { marginBottom: '1.25rem' } },
+        h('span', null, error)
+      ),
+
+      h('form', { onSubmit: handleSubmit },
+        h('div', { className: 'form-group' },
+          h('label', { className: 'form-label', htmlFor: 'signup-username' }, 'Username'),
+          h('input', {
+            id: 'signup-username',
+            type: 'text',
+            className: 'form-input',
+            value: username,
+            onChange: (e) => setUsername(e.target.value),
+            required: true,
+            minLength: 3,
+            maxLength: 50,
+            placeholder: 'Choose a username (min 3 chars)',
+            autoComplete: 'username',
+            autoFocus: true,
+          }),
+          h('div', { className: 'form-hint' }, 'Must be between 3 and 50 characters.')
+        ),
+
+        h('div', { className: 'form-group' },
+          h('label', { className: 'form-label', htmlFor: 'signup-email' }, 'Email Address'),
+          h('input', {
+            id: 'signup-email',
+            type: 'email',
+            className: 'form-input',
+            value: email,
+            onChange: (e) => setEmail(e.target.value),
+            required: true,
+            placeholder: 'operator@example.com',
+            autoComplete: 'email',
+          })
+        ),
+
+        h('div', { className: 'form-group' },
+          h('label', { className: 'form-label', htmlFor: 'signup-password' }, 'Password'),
+          h('div', { className: 'password-input-wrapper' },
+            h('input', {
+              id: 'signup-password',
+              type: showPassword ? 'text' : 'password',
+              className: 'form-input',
+              value: password,
+              onChange: (e) => setPassword(e.target.value),
+              required: true,
+              minLength: 8,
+              placeholder: 'Minimum 8 characters',
+              autoComplete: 'new-password',
+            }),
+            h('button', {
+              type: 'button',
+              className: 'password-toggle-btn',
+              onClick: () => setShowPassword(!showPassword),
+              title: showPassword ? 'Hide password' : 'Show password',
+              tabIndex: -1,
+            }, showPassword ? 'Hide' : 'Show')
+          ),
+          h('div', { className: 'form-hint' }, 'At least 8 characters required.')
+        ),
+
+        h('div', { className: 'form-group' },
+          h('label', { className: 'form-label', htmlFor: 'signup-confirm-password' }, 'Confirm Password'),
+          h('div', { className: 'password-input-wrapper' },
+            h('input', {
+              id: 'signup-confirm-password',
+              type: showConfirmPassword ? 'text' : 'password',
+              className: 'form-input',
+              value: confirmPassword,
+              onChange: (e) => setConfirmPassword(e.target.value),
+              required: true,
+              placeholder: 'Re-enter your password',
+              autoComplete: 'new-password',
+            }),
+            h('button', {
+              type: 'button',
+              className: 'password-toggle-btn',
+              onClick: () => setShowConfirmPassword(!showConfirmPassword),
+              title: showConfirmPassword ? 'Hide password' : 'Show password',
+              tabIndex: -1,
+            }, showConfirmPassword ? 'Hide' : 'Show')
+          )
+        ),
+
+        h('button', {
+          type: 'submit',
+          className: 'btn btn-primary',
+          style: { width: '100%', justifyContent: 'center', padding: '0.75rem', marginTop: '0.5rem' },
+          disabled: loading,
+        },
+          loading && h('span', { className: 'spinner-inline' }),
+          loading ? 'Creating Account...' : 'Create Account'
+        )
+      ),
+
+      h('div', { className: 'auth-footer' },
+        h('span', null, 'Already have an account?'),
+        h('button', {
+          type: 'button',
+          className: 'auth-link',
+          onClick: onSwitchToLogin,
+        }, 'Sign In')
       )
     )
   );
@@ -481,7 +734,15 @@ function RecentDecisionsTable({ decisions, modelMap }) {
  * Main Application Component
  */
 export function App() {
-  const [user, setUser] = useState(() => authStorage.getUser());
+  const [user, setUser] = useState(() => {
+    const token = authStorage.getToken();
+    const storedUser = authStorage.getUser();
+    return (token && storedUser) ? storedUser : null;
+  });
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [authMessage, setAuthMessage] = useState(null); // { type: 'success' | 'info' | 'warning', text: '...' }
+  const [prefillUsername, setPrefillUsername] = useState('');
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [selectedModelId, setSelectedModelId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -496,12 +757,17 @@ export function App() {
     }
   }, [alert]);
 
-  // Handle unauthenticated event
+  // Handle unauthorized event
   useEffect(() => {
-    const handleUnauthorized = () => {
+    const handleUnauthorized = (e) => {
       setUser(null);
       setDashboardData(null);
-      setAlert({ type: 'error', message: 'Session expired. Please log in again.' });
+      const isExpired = e?.detail?.reason === 'session_expired';
+      setSessionExpired(isExpired);
+      setAuthMode('login');
+      if (isExpired) {
+        setAuthMessage({ type: 'warning', text: 'Your session has expired. Please sign in again.' });
+      }
     };
     window.addEventListener('phoenixml-unauthorized', handleUnauthorized);
     return () => window.removeEventListener('phoenixml-unauthorized', handleUnauthorized);
@@ -530,16 +796,32 @@ export function App() {
   // Handle login
   const handleLoginSuccess = (authenticatedUser) => {
     setUser(authenticatedUser);
+    setSessionExpired(false);
+    setAuthMessage(null);
     setAlert({ type: 'success', message: `Welcome back, ${authenticatedUser.email}!` });
   };
 
+  // Handle registration success
+  const handleSignupSuccess = (createdUser, successMsg, username) => {
+    setAuthMode('login');
+    setPrefillUsername(username || createdUser?.username || '');
+    setSessionExpired(false);
+    setAuthMessage({
+      type: 'success',
+      text: successMsg || 'Account created successfully! Please sign in with your credentials.',
+    });
+  };
+
   // Handle logout
-  const handleLogout = () => {
-    api.logout();
+  const handleLogout = async () => {
+    await api.logout();
     setUser(null);
     setDashboardData(null);
     setSelectedModelId('');
     setAlert(null);
+    setSessionExpired(false);
+    setAuthMessage(null);
+    setAuthMode('login');
   };
 
   // Trigger AIMD model evaluation
@@ -637,9 +919,28 @@ export function App() {
     return null;
   }, [dashboardData, selectedModelId, modelMap]);
 
-  // If unauthenticated, display login screen
+  // If unauthenticated, display authentication screens
   if (!user) {
-    return h(LoginScreen, { onLoginSuccess: handleLoginSuccess });
+    if (authMode === 'signup') {
+      return h(SignupScreen, {
+        onSignupSuccess: handleSignupSuccess,
+        onSwitchToLogin: () => {
+          setAuthMode('login');
+          setAuthMessage(null);
+        },
+      });
+    }
+    return h(LoginScreen, {
+      onLoginSuccess: handleLoginSuccess,
+      onSwitchToSignup: () => {
+        setAuthMode('signup');
+        setAuthMessage(null);
+      },
+      sessionExpired,
+      initialMessage: authMessage?.text,
+      initialMessageType: authMessage?.type || 'info',
+      prefillUsername,
+    });
   }
 
   const modelCards = dashboardData?.model_cards || [];
