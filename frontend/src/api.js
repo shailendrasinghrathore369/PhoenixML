@@ -181,6 +181,20 @@ export const api = {
   },
 
   /**
+   * Run real reference model evaluation using the loaded artifact and UCI test set,
+   * recording a genuine monitoring observation in PhoenixML.
+   */
+  evaluateModelTelemetry: async (modelId, payload = { use_reference_test_set: true, record_monitoring_observation: true }) => {
+    return apiRequest(`/spam-models/${encodeURIComponent(modelId)}/evaluate-telemetry`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
    * Trigger AIMD model evaluation across monitoring observations.
    */
   evaluateModel: async (modelId) => {

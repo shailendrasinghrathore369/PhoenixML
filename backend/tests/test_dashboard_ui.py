@@ -109,6 +109,8 @@ def test_ui_static_js_app_served(client: TestClient):
     assert "export function App" in response.text
     assert "DecisionReviewBox" in response.text
     assert "KPIGrid" in response.text
+    assert "Run Real Evaluation" in response.text
+    assert "handleRealEvaluate" in response.text
 
 
 def test_ui_static_js_api_served(client: TestClient):
@@ -118,6 +120,7 @@ def test_ui_static_js_api_served(client: TestClient):
     assert "export const api" in response.text
     assert "getDashboardOverview" in response.text
     assert "updateApprovalStatus" in response.text
+    assert "evaluateModelTelemetry" in response.text
 
 
 def test_ui_vendor_react_scripts_served(client: TestClient):
@@ -257,3 +260,77 @@ def test_end_to_end_operator_dashboard_workflow(client: TestClient, ui_test_user
     assert final_data["decision_summary"]["pending_approvals_count"] == 0
     assert final_data["decision_summary"]["approved_count"] == 1
     assert final_data["model_cards"][0]["latest_decision"]["approval_status"] == "APPROVED"
+
+
+def test_real_model_evaluation_ui_workflow(client: TestClient, ui_test_users):
+    """
+    Test the complete Real Model Evaluation workflow:
+    1. Register real SpamSMS-LogisticRegression model with artifact description
+    2. Verify initial dashboard card shows 0 observations and insufficient_data health
+    3. Verify VIEWER role cannot trigger real evaluation (RBAC 403)
+    4. ML Engineer runs real evaluation on reference UCI SMS test set
+    5. Verify real evaluation response contains genuine accuracy, F1, precision, recall
+    6. Verify refreshed dashboard reflects updated observation count (1), HEALTHY status, and real F1
+    7. Trigger AIMD evaluation once telemetry observation is established
+    """
+    eng_token = ui_test_users["engineer"]["token"]
+    viewer_token = ui_test_users["viewer"]["token"]
+    eng_headers = {"Authorization": f"Bearer {eng_token}"}
+    view_headers = {"Authorization": f"Bearer {viewer_token}"}
+
+    # Step 1: Register real model
+    model_payload = {
+        "name": "SpamSMS-LogisticRegression-Test",
+        "version": "1.0.0",
+        "framework": "scikit-learn",
+        "algorithm": "TF-IDF + Logistic Regression",
+        "description": "Artifact: ml_pipeline/artifacts/spam_classifier_v1.joblib | Dataset: UCI SMS Spam Collection",
+        "parameters": {"C": 10.0, "class_weight": "balanced"},
+        "metrics": {"accuracy": 0.9901, "f1_score": 0.9632},
+    }
+    r_reg = client.post("/api/spam-models", json=model_payload, headers=eng_headers)
+    assert r_reg.status_code == 201
+    model_id = r_reg.json()["id"]
+
+    # Step 2: Initial Dashboard state - 0 observations, insufficient_data
+    r_init = client.get(f"/api/dashboard/{model_id}", headers=eng_headers)
+    assert r_init.status_code == 200
+    init_card = r_init.json()["model_cards"][0]
+    assert init_card["observation_count"] == 0
+    assert init_card["latest_health_status"] == "insufficient_data"
+
+    # Step 3: Viewer tries to run real evaluation -> RBAC 403
+    eval_payload = {
+        "use_reference_test_set": True,
+        "record_monitoring_observation": True,
+    }
+    r_view = client.post(f"/api/spam-models/{model_id}/evaluate-telemetry", json=eval_payload, headers=view_headers)
+    assert r_view.status_code == 403
+
+    # Step 4: ML Engineer runs real reference evaluation
+    r_eval = client.post(f"/api/spam-models/{model_id}/evaluate-telemetry", json=eval_payload, headers=eng_headers)
+    assert r_eval.status_code == 200
+    eval_res = r_eval.json()
+    metrics = eval_res["metrics"]
+    assert eval_res["observation_recorded"] is True
+    assert eval_res["observation_id"] is not None
+    assert metrics["prediction_count"] == 1115
+    assert metrics["accuracy"] == pytest.approx(0.9901, abs=1e-3)
+    assert metrics["precision"] == pytest.approx(0.9600, abs=1e-3)
+    assert metrics["recall"] == pytest.approx(0.9664, abs=1e-3)
+    assert metrics["f1_score"] == pytest.approx(0.9632, abs=1e-3)
+
+    # Step 5: Dashboard refresh reflects new observation and healthy status
+    r_after = client.get(f"/api/dashboard/{model_id}", headers=eng_headers)
+    assert r_after.status_code == 200
+    after_card = r_after.json()["model_cards"][0]
+    assert after_card["observation_count"] == 1
+    assert after_card["latest_health_status"] == "healthy"
+    assert after_card["latest_f1_score"] == pytest.approx(metrics["f1_score"], abs=1e-4)
+    assert after_card["latest_health_score"] is not None
+    assert after_card["latest_health_score"] > 80.0
+
+    # Step 6: With observation present, AIMD can be triggered successfully
+    r_aimd = client.post(f"/api/spam-models/{model_id}/decisions/evaluate", headers=eng_headers)
+    assert r_aimd.status_code == 201
+    assert r_aimd.json()["approval_status"] == "PENDING"

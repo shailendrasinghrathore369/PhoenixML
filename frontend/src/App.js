@@ -609,11 +609,15 @@ function DecisionReviewBox({ decision, modelName, userRole, onApprove, onReject,
 /**
  * Model Card Component
  */
-function ModelCard({ model, isSelected, onSelect, onEvaluate, actionLoading, userRole }) {
+function ModelCard({ model, isSelected, onSelect, onEvaluate, onRealEvaluate, evalResult, actionLoading, userRole }) {
   const isEvaluating = actionLoading === `evaluating-${model.model_id}`;
+  const isRealEvaluating = actionLoading === `real-eval-${model.model_id}`;
   const isViewer = userRole === 'VIEWER';
   const hasDecision = !!model.latest_decision;
   const decision = model.latest_decision;
+  const hasObservations = (model.observation_count || 0) > 0;
+  const isRealModel = model.name === 'SpamSMS-LogisticRegression' || (model.description && model.description.toLowerCase().includes('artifact'));
+  const showRealEval = isRealModel || isSelected;
 
   return h('div', { className: `model-card ${isSelected ? 'selected' : ''}` },
     h('div', { className: 'model-card-top' },
@@ -648,6 +652,40 @@ function ModelCard({ model, isSelected, onSelect, onEvaluate, actionLoading, use
       )
     ),
 
+    // Real Evaluation Metrics Result Banner (if run during this session)
+    evalResult && evalResult.metrics && h('div', {
+      style: {
+        background: 'rgba(5, 150, 105, 0.12)',
+        border: '1px solid rgba(5, 150, 105, 0.3)',
+        borderRadius: '6px',
+        padding: '0.6rem 0.75rem',
+        fontSize: '0.8rem',
+      }
+    },
+      h('div', { style: { fontWeight: 600, color: '#10b981', marginBottom: '0.35rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+        h('span', null, '🔬 Reference Evaluation Results:'),
+        h('span', { style: { color: '#94a3b8', fontSize: '0.75rem' } }, `${evalResult.metrics.prediction_count || 1115} test samples`)
+      ),
+      h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', textAlign: 'center' } },
+        h('div', null,
+          h('div', { style: { color: '#94a3b8', fontSize: '0.7rem' } }, 'Accuracy'),
+          h('div', { style: { fontWeight: 700, color: '#f8fafc' } }, (evalResult.metrics.accuracy * 100).toFixed(2) + '%')
+        ),
+        h('div', null,
+          h('div', { style: { color: '#94a3b8', fontSize: '0.7rem' } }, 'F1 Score'),
+          h('div', { style: { fontWeight: 700, color: '#f8fafc' } }, (evalResult.metrics.f1_score * 100).toFixed(2) + '%')
+        ),
+        h('div', null,
+          h('div', { style: { color: '#94a3b8', fontSize: '0.7rem' } }, 'Precision'),
+          h('div', { style: { fontWeight: 700, color: '#f8fafc' } }, (evalResult.metrics.precision * 100).toFixed(2) + '%')
+        ),
+        h('div', null,
+          h('div', { style: { color: '#94a3b8', fontSize: '0.7rem' } }, 'Recall'),
+          h('div', { style: { fontWeight: 700, color: '#f8fafc' } }, (evalResult.metrics.recall * 100).toFixed(2) + '%')
+        )
+      )
+    ),
+
     // Latest Decision snippet
     hasDecision ? h('div', { style: { fontSize: '0.8rem', background: '#0f172a', padding: '0.6rem 0.75rem', borderRadius: '6px' } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' } },
@@ -661,17 +699,34 @@ function ModelCard({ model, isSelected, onSelect, onEvaluate, actionLoading, use
     ),
 
     // Card Actions
-    h('div', { style: { display: 'flex', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' } },
+    h('div', { style: { display: 'flex', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem', flexWrap: 'wrap' } },
       h('button', {
         className: `btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`,
-        style: { flex: 1, justifyContent: 'center' },
+        style: { flex: '1 1 auto', minWidth: '110px', justifyContent: 'center' },
         onClick: () => onSelect(model.model_id),
       }, isSelected ? 'Focused' : 'Inspect Model'),
+      showRealEval && h('button', {
+        className: 'btn btn-success',
+        style: { flex: '1 1 auto', minWidth: '150px', justifyContent: 'center' },
+        onClick: () => onRealEvaluate(model.model_id),
+        disabled: isViewer || isRealEvaluating || isEvaluating,
+        title: isViewer
+          ? 'Viewers cannot run real model evaluations'
+          : 'Run real reference evaluation on UCI SMS dataset and record telemetry',
+      },
+        isRealEvaluating && h('span', { className: 'spinner-inline' }),
+        isRealEvaluating ? 'Running Evaluation...' : '🔬 Run Real Evaluation'
+      ),
       h('button', {
         className: 'btn btn-outline',
+        style: { flex: '1 1 auto', minWidth: '120px', justifyContent: 'center' },
         onClick: () => onEvaluate(model.model_id),
-        disabled: isViewer || isEvaluating,
-        title: isViewer ? 'Viewers cannot trigger evaluations' : 'Trigger AIMD Evaluation',
+        disabled: isViewer || isEvaluating || isRealEvaluating || !hasObservations,
+        title: isViewer
+          ? 'Viewers cannot trigger evaluations'
+          : !hasObservations
+            ? 'No monitoring observations. Run Real Evaluation first.'
+            : 'Trigger AIMD Evaluation',
       }, isEvaluating ? 'Evaluating...' : '⚡ Trigger AIMD')
     )
   );
@@ -748,6 +803,7 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [alert, setAlert] = useState(null);
+  const [evalResults, setEvalResults] = useState({});
 
   // Auto-dismiss alert after 6 seconds
   useEffect(() => {
@@ -819,6 +875,7 @@ export function App() {
     setDashboardData(null);
     setSelectedModelId('');
     setAlert(null);
+    setEvalResults({});
     setSessionExpired(false);
     setAuthMessage(null);
     setAuthMode('login');
@@ -828,6 +885,14 @@ export function App() {
   const handleEvaluate = async (modelId) => {
     if (user?.role === 'VIEWER') {
       setAlert({ type: 'error', message: 'Viewers cannot trigger model evaluations.' });
+      return;
+    }
+    const targetModel = modelMap[modelId];
+    if (targetModel && (!targetModel.observation_count || targetModel.observation_count === 0)) {
+      setAlert({
+        type: 'error',
+        message: 'Cannot trigger AIMD evaluation: model has zero monitoring observations. Run Real Evaluation first to record telemetry.',
+      });
       return;
     }
     setActionLoading(`evaluating-${modelId}`);
@@ -840,6 +905,38 @@ export function App() {
       await loadDashboard(selectedModelId);
     } catch (err) {
       setAlert({ type: 'error', message: `Evaluation failed: ${err.message}` });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Run real reference model evaluation on UCI SMS test set
+  const handleRealEvaluate = async (modelId) => {
+    if (user?.role === 'VIEWER') {
+      setAlert({ type: 'error', message: 'Viewers cannot run real model evaluations.' });
+      return;
+    }
+    setActionLoading(`real-eval-${modelId}`);
+    try {
+      const res = await api.evaluateModelTelemetry(modelId, {
+        use_reference_test_set: true,
+        record_monitoring_observation: true,
+      });
+      setEvalResults((prev) => ({ ...prev, [modelId]: res }));
+      const metrics = res.metrics || {};
+      const accStr = metrics.accuracy !== undefined ? (metrics.accuracy * 100).toFixed(2) + '%' : 'N/A';
+      const f1Str = metrics.f1_score !== undefined ? (metrics.f1_score * 100).toFixed(2) + '%' : 'N/A';
+      const precStr = metrics.precision !== undefined ? (metrics.precision * 100).toFixed(2) + '%' : 'N/A';
+      const recStr = metrics.recall !== undefined ? (metrics.recall * 100).toFixed(2) + '%' : 'N/A';
+      const countStr = metrics.prediction_count || 1115;
+
+      setAlert({
+        type: 'success',
+        message: `Real evaluation completed on ${countStr} reference samples! Accuracy: ${accStr} | F1: ${f1Str} | Precision: ${precStr} | Recall: ${recStr}. Monitoring observation recorded successfully.`,
+      });
+      await loadDashboard(selectedModelId);
+    } catch (err) {
+      setAlert({ type: 'error', message: `Real evaluation failed: ${err.message}` });
     } finally {
       setActionLoading(null);
     }
@@ -1046,6 +1143,8 @@ export function App() {
                       isSelected: selectedModelId === m.model_id,
                       onSelect: (id) => setSelectedModelId(selectedModelId === id ? '' : id),
                       onEvaluate: handleEvaluate,
+                      onRealEvaluate: handleRealEvaluate,
+                      evalResult: evalResults[m.model_id],
                       actionLoading,
                       userRole: user?.role,
                     })
