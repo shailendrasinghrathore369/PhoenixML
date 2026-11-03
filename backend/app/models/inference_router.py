@@ -122,6 +122,7 @@ def evaluate_model_telemetry(
         texts=texts,
         y_true=y_true,
         use_reference_test_set=payload.use_reference_test_set,
+        dataset_name=payload.dataset_name,
         sample_limit=payload.sample_limit,
         record_observation=payload.record_monitoring_observation,
     )

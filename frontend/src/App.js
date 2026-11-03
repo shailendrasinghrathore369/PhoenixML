@@ -611,7 +611,9 @@ function DecisionReviewBox({ decision, modelName, userRole, onApprove, onReject,
  */
 function ModelCard({ model, isSelected, onSelect, onEvaluate, onRealEvaluate, evalResult, actionLoading, userRole }) {
   const isEvaluating = actionLoading === `evaluating-${model.model_id}`;
-  const isRealEvaluating = actionLoading === `real-eval-${model.model_id}`;
+  const isRefEvaluating = actionLoading === `ref-eval-${model.model_id}`;
+  const isShiftedEvaluating = actionLoading === `shifted-eval-${model.model_id}`;
+  const isRealEvaluating = isRefEvaluating || isShiftedEvaluating;
   const isViewer = userRole === 'VIEWER';
   const hasDecision = !!model.latest_decision;
   const decision = model.latest_decision;
@@ -655,16 +657,16 @@ function ModelCard({ model, isSelected, onSelect, onEvaluate, onRealEvaluate, ev
     // Real Evaluation Metrics Result Banner (if run during this session)
     evalResult && evalResult.metrics && h('div', {
       style: {
-        background: 'rgba(5, 150, 105, 0.12)',
-        border: '1px solid rgba(5, 150, 105, 0.3)',
+        background: evalResult.datasetName === 'shifted' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(5, 150, 105, 0.12)',
+        border: `1px solid ${evalResult.datasetName === 'shifted' ? 'rgba(239, 68, 68, 0.35)' : 'rgba(5, 150, 105, 0.3)'}`,
         borderRadius: '6px',
         padding: '0.6rem 0.75rem',
         fontSize: '0.8rem',
       }
     },
-      h('div', { style: { fontWeight: 600, color: '#10b981', marginBottom: '0.35rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-        h('span', null, '🔬 Reference Evaluation Results:'),
-        h('span', { style: { color: '#94a3b8', fontSize: '0.75rem' } }, `${evalResult.metrics.prediction_count || 1115} test samples`)
+      h('div', { style: { fontWeight: 600, color: evalResult.datasetName === 'shifted' ? '#f87171' : '#10b981', marginBottom: '0.35rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+        h('span', null, evalResult.datasetName === 'shifted' ? '📉 Shifted Evaluation Results (Degraded):' : '🔬 Reference Evaluation Results:'),
+        h('span', { style: { color: '#94a3b8', fontSize: '0.75rem' } }, `${evalResult.metrics.prediction_count} test samples`)
       ),
       h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', textAlign: 'center' } },
         h('div', null,
@@ -683,6 +685,22 @@ function ModelCard({ model, isSelected, onSelect, onEvaluate, onRealEvaluate, ev
           h('div', { style: { color: '#94a3b8', fontSize: '0.7rem' } }, 'Recall'),
           h('div', { style: { fontWeight: 700, color: '#f8fafc' } }, (evalResult.metrics.recall * 100).toFixed(2) + '%')
         )
+      ),
+      (evalResult.metrics.true_positives !== undefined) && h('div', {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '0.4rem',
+          paddingTop: '0.35rem',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          fontSize: '0.7rem',
+          color: '#94a3b8',
+        }
+      },
+        h('span', null, `TN: ${evalResult.metrics.true_negatives}`),
+        h('span', null, `FP: ${evalResult.metrics.false_positives}`),
+        h('span', null, `FN: ${evalResult.metrics.false_negatives}`),
+        h('span', null, `TP: ${evalResult.metrics.true_positives}`)
       )
     ),
 
@@ -707,15 +725,34 @@ function ModelCard({ model, isSelected, onSelect, onEvaluate, onRealEvaluate, ev
       }, isSelected ? 'Focused' : 'Inspect Model'),
       showRealEval && h('button', {
         className: 'btn btn-success',
-        style: { flex: '1 1 auto', minWidth: '150px', justifyContent: 'center' },
-        onClick: () => onRealEvaluate(model.model_id),
+        style: { flex: '1 1 auto', minWidth: '160px', justifyContent: 'center' },
+        onClick: () => onRealEvaluate(model.model_id, 'reference'),
         disabled: isViewer || isRealEvaluating || isEvaluating,
         title: isViewer
           ? 'Viewers cannot run real model evaluations'
-          : 'Run real reference evaluation on UCI SMS dataset and record telemetry',
+          : 'Evaluate the model on its original holdout test set.',
       },
-        isRealEvaluating && h('span', { className: 'spinner-inline' }),
-        isRealEvaluating ? 'Running Evaluation...' : '🔬 Run Real Evaluation'
+        isRefEvaluating && h('span', { className: 'spinner-inline' }),
+        isRefEvaluating ? 'Evaluating Reference...' : '🔬 Run Reference Evaluation'
+      ),
+      showRealEval && h('button', {
+        className: 'btn',
+        style: {
+          flex: '1 1 auto',
+          minWidth: '160px',
+          justifyContent: 'center',
+          backgroundColor: '#d97706',
+          borderColor: '#b45309',
+          color: '#ffffff',
+        },
+        onClick: () => onRealEvaluate(model.model_id, 'shifted'),
+        disabled: isViewer || isRealEvaluating || isEvaluating,
+        title: isViewer
+          ? 'Viewers cannot run real model evaluations'
+          : 'Evaluate the same trained model on the new shifted operational dataset.',
+      },
+        isShiftedEvaluating && h('span', { className: 'spinner-inline' }),
+        isShiftedEvaluating ? 'Evaluating Shifted...' : '📉 Run Shifted Data Evaluation'
       ),
       h('button', {
         className: 'btn btn-outline',
@@ -725,9 +762,19 @@ function ModelCard({ model, isSelected, onSelect, onEvaluate, onRealEvaluate, ev
         title: isViewer
           ? 'Viewers cannot trigger evaluations'
           : !hasObservations
-            ? 'No monitoring observations. Run Real Evaluation first.'
+            ? 'No monitoring observations. Run evaluation first.'
             : 'Trigger AIMD Evaluation',
-      }, isEvaluating ? 'Evaluating...' : '⚡ Trigger AIMD')
+      }, isEvaluating ? 'Evaluating...' : '⚡ Trigger AIMD'),
+      showRealEval && h('div', {
+        style: {
+          width: '100%',
+          fontSize: '0.72rem',
+          color: '#94a3b8',
+          fontStyle: 'italic',
+          marginTop: '0.2rem',
+          textAlign: 'center',
+        }
+      }, 'The model is not retrained. Only the evaluation data changes.')
     )
   );
 }
@@ -910,33 +957,42 @@ export function App() {
     }
   };
 
-  // Run real reference model evaluation on UCI SMS test set
-  const handleRealEvaluate = async (modelId) => {
+  // Run real model evaluation on reference or shifted dataset
+  const handleRealEvaluate = async (modelId, datasetName = 'reference') => {
     if (user?.role === 'VIEWER') {
       setAlert({ type: 'error', message: 'Viewers cannot run real model evaluations.' });
       return;
     }
-    setActionLoading(`real-eval-${modelId}`);
+    const isShifted = datasetName === 'shifted';
+    setActionLoading(isShifted ? `shifted-eval-${modelId}` : `ref-eval-${modelId}`);
     try {
       const res = await api.evaluateModelTelemetry(modelId, {
-        use_reference_test_set: true,
+        dataset_name: datasetName,
+        use_reference_test_set: !isShifted,
         record_monitoring_observation: true,
       });
-      setEvalResults((prev) => ({ ...prev, [modelId]: res }));
+      setEvalResults((prev) => ({
+        ...prev,
+        [modelId]: {
+          ...res,
+          datasetName,
+        },
+      }));
       const metrics = res.metrics || {};
       const accStr = metrics.accuracy !== undefined ? (metrics.accuracy * 100).toFixed(2) + '%' : 'N/A';
       const f1Str = metrics.f1_score !== undefined ? (metrics.f1_score * 100).toFixed(2) + '%' : 'N/A';
       const precStr = metrics.precision !== undefined ? (metrics.precision * 100).toFixed(2) + '%' : 'N/A';
       const recStr = metrics.recall !== undefined ? (metrics.recall * 100).toFixed(2) + '%' : 'N/A';
-      const countStr = metrics.prediction_count || 1115;
+      const countStr = metrics.prediction_count || (isShifted ? 2017 : 1115);
+      const label = isShifted ? 'Shifted operational dataset' : 'Reference test set';
 
       setAlert({
-        type: 'success',
-        message: `Real evaluation completed on ${countStr} reference samples! Accuracy: ${accStr} | F1: ${f1Str} | Precision: ${precStr} | Recall: ${recStr}. Monitoring observation recorded successfully.`,
+        type: isShifted ? 'warning' : 'success',
+        message: `${label} evaluation completed on ${countStr} samples! Accuracy: ${accStr} | F1: ${f1Str} | Precision: ${precStr} | Recall: ${recStr}. Monitoring observation recorded successfully.`,
       });
       await loadDashboard(selectedModelId);
     } catch (err) {
-      setAlert({ type: 'error', message: `Real evaluation failed: ${err.message}` });
+      setAlert({ type: 'error', message: `Evaluation failed: ${err.message}` });
     } finally {
       setActionLoading(null);
     }

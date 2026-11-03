@@ -19,6 +19,7 @@ Validates Step 3 of Real-Model Integration:
 14. RBAC and security boundaries are enforced on inference/telemetry API routes.
 """
 
+import hashlib
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -434,3 +435,162 @@ def test_api_unauthenticated_request_rejected(client: TestClient, registered_spa
     model_id = registered_spam_model.id
     resp = client.post(f"/api/spam-models/{model_id}/predict", json={"texts": ["Hello"]})
     assert resp.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# 7. Controlled Shifted Dataset Evaluation & Telemetry Tests
+# ---------------------------------------------------------------------------
+
+def test_evaluation_reference_backward_compatibility(client: TestClient, registered_spam_model, test_ml_engineer_user):
+    """Test A: Backward compatibility - when dataset_name is omitted, reference evaluation works identically."""
+    token = test_ml_engineer_user["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    model_id = registered_spam_model.id
+
+    payload = {
+        "use_reference_test_set": True,
+        "record_monitoring_observation": False,
+    }
+    resp = client.post(f"/api/spam-models/{model_id}/evaluate-telemetry", json=payload, headers=headers)
+    assert resp.status_code == 200
+    metrics = resp.json()["metrics"]
+    assert metrics["prediction_count"] == 1115
+    assert metrics["accuracy"] == pytest.approx(0.9901, abs=1e-3)
+    assert metrics["precision"] == pytest.approx(0.9600, abs=1e-3)
+    assert metrics["recall"] == pytest.approx(0.9664, abs=1e-3)
+    assert metrics["f1_score"] == pytest.approx(0.9632, abs=1e-3)
+
+
+def test_shifted_dataset_loading(db_session, registered_spam_model):
+    """Test B: Shifted dataset loading loads exactly 2,017 samples with correct distribution."""
+    service = SpamInferenceService(db=db_session, model_id=registered_spam_model.id)
+    texts, labels = service.get_shifted_test_data()
+
+    assert len(texts) == 2017
+    assert len(labels) == 2017
+    assert all(lbl in (0, 1) for lbl in labels)
+
+    spam_cnt = sum(labels)
+    ham_cnt = len(labels) - spam_cnt
+    assert ham_cnt == 1281
+    assert spam_cnt == 736
+
+    # Test sample limit capping
+    t_limited, l_limited = service.get_shifted_test_data(sample_limit=50)
+    assert len(t_limited) == 50
+    assert len(l_limited) == 50
+
+
+def test_real_shifted_evaluation_metrics(client: TestClient, registered_spam_model, test_ml_engineer_user):
+    """Test C: Real shifted evaluation dynamically calculates expected metrics on the unchanged model."""
+    token = test_ml_engineer_user["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    model_id = registered_spam_model.id
+
+    payload = {
+        "dataset_name": "shifted",
+        "record_monitoring_observation": False,
+    }
+    resp = client.post(f"/api/spam-models/{model_id}/evaluate-telemetry", json=payload, headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    metrics = data["metrics"]
+
+    assert metrics["prediction_count"] == 2017
+    assert metrics["accuracy"] == pytest.approx(0.7754, abs=1e-3)
+    assert metrics["precision"] == pytest.approx(0.9101, abs=1e-3)
+    assert metrics["recall"] == pytest.approx(0.4266, abs=1e-3)
+    assert metrics["f1_score"] == pytest.approx(0.5809, abs=1e-3)
+
+    # Confusion matrix checks
+    assert metrics["true_negatives"] == 1250
+    assert metrics["false_positives"] == 31
+    assert metrics["false_negatives"] == 422
+    assert metrics["true_positives"] == 314
+
+
+def test_shifted_telemetry_persists_observation(client: TestClient, db_session, registered_spam_model, test_ml_engineer_user):
+    """Test D: Shifted evaluation with record_monitoring_observation=True persists a valid observation."""
+    token = test_ml_engineer_user["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    model_id = registered_spam_model.id
+
+    payload = {
+        "dataset_name": "shifted",
+        "record_monitoring_observation": True,
+    }
+    resp = client.post(f"/api/spam-models/{model_id}/evaluate-telemetry", json=payload, headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["observation_recorded"] is True
+    assert data["observation_id"] is not None
+
+    obs_id = uuid.UUID(data["observation_id"])
+    obs = db_session.get(MonitoringObservation, obs_id)
+    assert obs is not None
+    assert obs.model_id == model_id
+    assert obs.prediction_count == 2017
+    assert obs.accuracy == pytest.approx(0.7754, abs=1e-3)
+    assert obs.f1_score == pytest.approx(0.5809, abs=1e-3)
+    assert obs.positive_prediction_count + obs.negative_prediction_count == 2017
+
+
+def test_no_model_mutation_during_evaluation(db_session, registered_spam_model):
+    """Test E: Neither the model artifact nor the reference dataset are modified during shifted evaluation."""
+    ws_root = get_workspace_root()
+    model_path = ws_root / "ml_pipeline" / "artifacts" / "spam_classifier_v1.joblib"
+    ref_path = ws_root / "ml_pipeline" / "data" / "SMSSpamCollection"
+
+    assert model_path.is_file()
+    assert ref_path.is_file()
+
+    def sha256_file(path: Path) -> str:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            while chunk := f.read(65536):
+                h.update(chunk)
+        return h.hexdigest()
+
+    model_hash_before = sha256_file(model_path)
+    model_mtime_before = model_path.stat().st_mtime
+    ref_hash_before = sha256_file(ref_path)
+    ref_mtime_before = ref_path.stat().st_mtime
+
+    # Run shifted evaluation
+    service = SpamInferenceService(db=db_session, model_id=registered_spam_model.id)
+    texts, labels = service.get_shifted_test_data()
+    metrics = service.evaluate_labeled_data(texts, labels)
+    assert metrics.prediction_count == 2017
+
+    model_hash_after = sha256_file(model_path)
+    model_mtime_after = model_path.stat().st_mtime
+    ref_hash_after = sha256_file(ref_path)
+    ref_mtime_after = ref_path.stat().st_mtime
+
+    assert model_hash_before == model_hash_after, "Model artifact was modified!"
+    assert model_mtime_before == model_mtime_after, "Model mtime changed!"
+    assert ref_hash_before == ref_hash_after, "Reference dataset was modified!"
+    assert ref_mtime_before == ref_mtime_after, "Reference dataset mtime changed!"
+
+
+def test_api_rejects_invalid_dataset_name(client: TestClient, registered_spam_model, test_ml_engineer_user):
+    """Test F: Invalid dataset name or empty payload is rejected with 422 Unprocessable Entity."""
+    token = test_ml_engineer_user["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    model_id = registered_spam_model.id
+
+    # Unsupported dataset_name
+    resp_invalid = client.post(
+        f"/api/spam-models/{model_id}/evaluate-telemetry",
+        json={"dataset_name": "non_existent_dataset"},
+        headers=headers,
+    )
+    assert resp_invalid.status_code == 422
+
+    # Empty payload with no source provided
+    resp_empty = client.post(
+        f"/api/spam-models/{model_id}/evaluate-telemetry",
+        json={},
+        headers=headers,
+    )
+    assert resp_empty.status_code == 422

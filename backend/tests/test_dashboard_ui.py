@@ -334,3 +334,125 @@ def test_real_model_evaluation_ui_workflow(client: TestClient, ui_test_users):
     r_aimd = client.post(f"/api/spam-models/{model_id}/decisions/evaluate", headers=eng_headers)
     assert r_aimd.status_code == 201
     assert r_aimd.json()["approval_status"] == "PENDING"
+
+
+def test_controlled_model_degradation_ui_workflow(client: TestClient, ui_test_users):
+    """
+    Step 3 Demonstration Test:
+    1. Verify frontend JS assets contain Reference & Shifted evaluation actions and explanatory text.
+    2. Register real SpamSMS-LogisticRegression model.
+    3. Verify VIEWER role is blocked from running both reference and shifted evaluation (RBAC 403).
+    4. ML Engineer runs Reference evaluation (dataset_name="reference") -> healthy metrics and HEALTHY status (>80).
+    5. ML Engineer runs Shifted evaluation (dataset_name="shifted") -> genuinely degraded metrics (~0.7754 Acc, ~0.5809 F1).
+    6. Dashboard refresh reflects degraded metrics and WARNING status (<80, >=60).
+    7. ML Engineer triggers AIMD evaluation under degraded health -> human-in-the-loop PENDING decision.
+    """
+    eng_token = ui_test_users["engineer"]["token"]
+    viewer_token = ui_test_users["viewer"]["token"]
+    eng_headers = {"Authorization": f"Bearer {eng_token}"}
+    view_headers = {"Authorization": f"Bearer {viewer_token}"}
+
+    # 1. Verify UI static assets expose the two evaluation actions and explanatory text
+    r_app_js = client.get("/ui/src/App.js")
+    assert r_app_js.status_code == 200
+    assert "Run Reference Evaluation" in r_app_js.text
+    assert "Run Shifted Data Evaluation" in r_app_js.text
+    assert "The model is not retrained. Only the evaluation data changes." in r_app_js.text
+    assert "Shifted Evaluation Results (Degraded)" in r_app_js.text
+
+    r_api_js = client.get("/ui/src/api.js")
+    assert r_api_js.status_code == 200
+    assert "evaluateModelTelemetry" in r_api_js.text
+    assert "dataset_name" in r_api_js.text
+
+    # 2. Register real reference model
+    model_payload = {
+        "name": "SpamSMS-LogisticRegression-Degradation-Demo",
+        "version": "1.0.0",
+        "framework": "scikit-learn",
+        "algorithm": "TF-IDF + Logistic Regression",
+        "description": "Artifact: ml_pipeline/artifacts/spam_classifier_v1.joblib | Dataset: UCI SMS Spam Collection",
+        "parameters": {"C": 10.0, "class_weight": "balanced"},
+        "metrics": {"accuracy": 0.9901, "f1_score": 0.9632},
+    }
+    r_reg = client.post("/api/spam-models", json=model_payload, headers=eng_headers)
+    assert r_reg.status_code == 201
+    model_id = r_reg.json()["id"]
+
+    # 3. RBAC: Viewer cannot run reference or shifted evaluation
+    r_view_ref = client.post(
+        f"/api/spam-models/{model_id}/evaluate-telemetry",
+        json={"dataset_name": "reference", "use_reference_test_set": True, "record_monitoring_observation": True},
+        headers=view_headers,
+    )
+    assert r_view_ref.status_code == 403
+
+    r_view_shift = client.post(
+        f"/api/spam-models/{model_id}/evaluate-telemetry",
+        json={"dataset_name": "shifted", "use_reference_test_set": False, "record_monitoring_observation": True},
+        headers=view_headers,
+    )
+    assert r_view_shift.status_code == 403
+
+    # 4. ML Engineer runs Reference evaluation
+    ref_payload = {
+        "dataset_name": "reference",
+        "use_reference_test_set": True,
+        "record_monitoring_observation": True,
+    }
+    r_ref = client.post(f"/api/spam-models/{model_id}/evaluate-telemetry", json=ref_payload, headers=eng_headers)
+    assert r_ref.status_code == 200
+    ref_data = r_ref.json()
+    ref_metrics = ref_data["metrics"]
+    assert ref_data["observation_recorded"] is True
+    assert ref_metrics["prediction_count"] == 1115
+    assert ref_metrics["accuracy"] == pytest.approx(0.9901, abs=1e-3)
+    assert ref_metrics["f1_score"] == pytest.approx(0.9632, abs=1e-3)
+
+    # Dashboard after reference evaluation -> healthy
+    r_dash_ref = client.get(f"/api/dashboard/{model_id}", headers=eng_headers)
+    assert r_dash_ref.status_code == 200
+    card_ref = r_dash_ref.json()["model_cards"][0]
+    assert card_ref["observation_count"] == 1
+    assert card_ref["latest_health_status"] == "healthy"
+    assert card_ref["latest_health_score"] > 80.0
+    assert card_ref["latest_f1_score"] == pytest.approx(ref_metrics["f1_score"], abs=1e-4)
+
+    # 5. ML Engineer runs Shifted data evaluation
+    shift_payload = {
+        "dataset_name": "shifted",
+        "use_reference_test_set": False,
+        "record_monitoring_observation": True,
+    }
+    r_shift = client.post(f"/api/spam-models/{model_id}/evaluate-telemetry", json=shift_payload, headers=eng_headers)
+    assert r_shift.status_code == 200
+    shift_data = r_shift.json()
+    shift_metrics = shift_data["metrics"]
+    assert shift_data["observation_recorded"] is True
+    assert shift_metrics["prediction_count"] == 2017
+    assert shift_metrics["accuracy"] == pytest.approx(0.7754, abs=1e-3)
+    assert shift_metrics["precision"] == pytest.approx(0.9101, abs=1e-3)
+    assert shift_metrics["recall"] == pytest.approx(0.4266, abs=1e-3)
+    assert shift_metrics["f1_score"] == pytest.approx(0.5809, abs=1e-3)
+    assert shift_metrics["true_negatives"] == 1250
+    assert shift_metrics["false_positives"] == 31
+    assert shift_metrics["false_negatives"] == 422
+    assert shift_metrics["true_positives"] == 314
+
+    # 6. Dashboard after shifted evaluation -> degraded to WARNING
+    r_dash_shift = client.get(f"/api/dashboard/{model_id}", headers=eng_headers)
+    assert r_dash_shift.status_code == 200
+    card_shift = r_dash_shift.json()["model_cards"][0]
+    assert card_shift["observation_count"] == 2
+    assert card_shift["latest_health_status"] == "warning"
+    assert card_shift["latest_health_score"] < 80.0
+    assert card_shift["latest_health_score"] >= 60.0
+    assert card_shift["latest_f1_score"] == pytest.approx(shift_metrics["f1_score"], abs=1e-4)
+
+    # 7. AIMD Decision Trigger under degraded state
+    r_aimd = client.post(f"/api/spam-models/{model_id}/decisions/evaluate", headers=eng_headers)
+    assert r_aimd.status_code == 201
+    decision = r_aimd.json()
+    assert decision["approval_status"] == "PENDING"
+    assert decision["health_status"] == "warning"
+    assert decision["health_score"] == pytest.approx(card_shift["latest_health_score"], abs=1e-2)

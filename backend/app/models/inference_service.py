@@ -21,7 +21,7 @@ import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
 
 import joblib
 from sklearn.metrics import (
@@ -244,6 +244,25 @@ class SpamInferenceService:
 
         return X_test, y_test
 
+    def get_shifted_test_data(
+        self,
+        sample_limit: Optional[int] = None,
+    ) -> Tuple[List[str], List[int]]:
+        """
+        Load the complete independent shifted SMS evaluation dataset from sms_eval_shifted.tsv.
+        Does NOT apply train/test splitting because this is an independent evaluation dataset.
+        """
+        from ml_pipeline.data_loader import load_shifted_eval_data
+
+        ws_root = get_workspace_root()
+        data_file = ws_root / "ml_pipeline" / "data" / "sms_eval_shifted.tsv"
+        texts, labels = load_shifted_eval_data(data_path=data_file)
+
+        if sample_limit is not None and sample_limit > 0:
+            return texts[:sample_limit], labels[:sample_limit]
+
+        return texts, labels
+
     def evaluate_labeled_data(
         self,
         texts: Sequence[str],
@@ -372,13 +391,14 @@ class SpamInferenceService:
         texts: Optional[Sequence[str]] = None,
         y_true: Optional[Sequence[int]] = None,
         use_reference_test_set: bool = False,
+        dataset_name: Optional[Literal["reference", "shifted"]] = None,
         sample_limit: Optional[int] = None,
         record_observation: bool = True,
         observed_at: Optional[datetime] = None,
     ) -> TelemetryEvaluationResponse:
         """
         End-to-end evaluation flow:
-        1. Resolve evaluation dataset (provided samples or deterministic reference test set)
+        1. Resolve evaluation dataset (provided samples, deterministic reference test set, or shifted eval set)
         2. Execute real inference with SpamSMS-LogisticRegression
         3. Calculate actual performance metrics
         4. If requested, persist MonitoringObservation in PhoenixML
@@ -387,16 +407,23 @@ class SpamInferenceService:
         eval_texts: List[str]
         eval_labels: List[int]
 
-        if use_reference_test_set:
-            eval_texts, eval_labels = self.get_reference_test_data(sample_limit=sample_limit)
-        elif texts is not None and y_true is not None:
+        # 1. Custom provided samples take precedence if provided
+        if texts is not None and y_true is not None and len(texts) > 0:
             eval_texts = list(texts)
             eval_labels = list(y_true)
             if sample_limit is not None and sample_limit > 0:
                 eval_texts = eval_texts[:sample_limit]
                 eval_labels = eval_labels[:sample_limit]
+        # 2. Shifted evaluation dataset
+        elif dataset_name == "shifted":
+            eval_texts, eval_labels = self.get_shifted_test_data(sample_limit=sample_limit)
+        # 3. Reference evaluation dataset
+        elif use_reference_test_set or dataset_name == "reference":
+            eval_texts, eval_labels = self.get_reference_test_data(sample_limit=sample_limit)
         else:
-            raise ValueError("Must provide (texts, y_true) or specify use_reference_test_set=True")
+            raise ValueError(
+                "Must provide (texts, y_true), specify use_reference_test_set=True, or select dataset_name='shifted'"
+            )
 
         metrics = self.evaluate_labeled_data(eval_texts, eval_labels)
 
@@ -409,6 +436,7 @@ class SpamInferenceService:
                 observed_at=observed_at,
             )
 
+        dataset_desc = "shifted operational distribution" if dataset_name == "shifted" else "reference"
         return TelemetryEvaluationResponse(
             model_id=model_id,
             model_name=self.model_name,
@@ -418,7 +446,7 @@ class SpamInferenceService:
             observation_id=obs_record.id if obs_record else None,
             observation_recorded=obs_record is not None,
             notes=(
-                f"Evaluated {metrics.prediction_count} real predictions using genuine {self.model_name} "
+                f"Evaluated {metrics.prediction_count} real predictions ({dataset_desc}) using genuine {self.model_name} "
                 f"v{self.model_version} artifact. Metrics derived directly from predictions."
             ),
         )

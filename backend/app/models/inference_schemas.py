@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
@@ -62,7 +62,8 @@ class LabeledEvaluationInput(BaseModel):
     """
     Input payload for evaluating the model on labeled data.
     
-    Can evaluate custom supplied samples, or use the deterministic UCI holdout test set.
+    Can evaluate custom supplied samples, the deterministic UCI holdout test set,
+    or the independent shifted evaluation dataset.
     """
     model_config = ConfigDict(str_strip_whitespace=True)
     samples: Optional[List[LabeledSampleInput]] = Field(
@@ -72,8 +73,12 @@ class LabeledEvaluationInput(BaseModel):
         default=False,
         description="If True, loads the deterministic UCI SMS Spam Collection holdout test set"
     )
+    dataset_name: Literal["reference", "shifted"] = Field(
+        default="reference",
+        description="Dataset identifier: 'reference' for deterministic UCI holdout, 'shifted' for operational distribution shift"
+    )
     sample_limit: Optional[int] = Field(
-        None, ge=1, le=2000, description="Optional cap on the number of samples to evaluate"
+        None, ge=1, le=5000, description="Optional cap on the number of samples to evaluate"
     )
     record_monitoring_observation: bool = Field(
         default=True,
@@ -82,7 +87,13 @@ class LabeledEvaluationInput(BaseModel):
 
     @model_validator(mode="after")
     def validate_source(self):
-        if not self.use_reference_test_set and (not self.samples or len(self.samples) == 0):
+        has_samples = self.samples is not None and len(self.samples) > 0
+        if (
+            not self.use_reference_test_set
+            and not has_samples
+            and self.dataset_name != "shifted"
+            and "dataset_name" not in self.model_fields_set
+        ):
             raise ValueError("Either 'samples' must be provided or 'use_reference_test_set' must be True")
         return self
 

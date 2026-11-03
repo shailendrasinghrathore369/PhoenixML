@@ -20,6 +20,7 @@ FALLBACK_RAW_URL = "https://raw.githubusercontent.com/al-one/SMS-Spam-Classifica
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parent / "data"
 DEFAULT_DATA_FILE = DEFAULT_DATA_DIR / "SMSSpamCollection"
+SHIFTED_DATA_FILE = DEFAULT_DATA_DIR / "sms_eval_shifted.tsv"
 
 
 def download_sms_spam_data(target_path: Optional[Path] = None) -> Path:
@@ -114,6 +115,30 @@ def load_sms_spam_data(
         raise ValueError(f"No valid records found in dataset at {path}")
 
     return texts, labels
+
+
+def load_shifted_eval_data(
+    data_path: Optional[Path] = None,
+) -> Tuple[List[str], List[int]]:
+    """
+    Loads raw SMS messages and binary classification labels from the controlled
+    shifted evaluation dataset (sms_eval_shifted.tsv).
+
+    Labels:
+        0 = ham (legitimate)
+        1 = spam (unsolicited commercial/phishing)
+
+    Args:
+        data_path: Optional custom path to sms_eval_shifted.tsv file.
+
+    Returns:
+        Tuple of (texts: List[str], labels: List[int])
+    """
+    path = data_path or SHIFTED_DATA_FILE
+    if not path.exists():
+        raise FileNotFoundError(f"Shifted evaluation dataset not found at: {path}")
+
+    return load_sms_spam_data(data_path=path)
 
 
 def get_data_summary(texts: List[str], labels: List[int]) -> Dict[str, Any]:
