@@ -25,6 +25,13 @@ logs/
 # Node.js
 node_modules/
 
+# Frontend build artifacts
+frontend/dist/
+
 # IDE
 .vscode/
 .idea/
+
+# Agent tooling (skills, lock files)
+.agents/
+skills-lock.json

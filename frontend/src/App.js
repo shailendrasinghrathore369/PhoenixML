@@ -1,14 +1,38 @@
 /**
  * PhoenixML Operator-Facing Dashboard Single Page Application
- * Built with React 18 for operator decision support and human approval workflows.
+ * Module Entrypoint and Bridge for FastAPI /ui/ Static Serving.
+ *
+ * Implements the modern modular foundation while maintaining backward
+ * compatibility for FastAPI direct static serving and backend test assertions.
  */
 
 import { api, authStorage } from './api.js';
 
-const { useState, useEffect, useCallback, useMemo } = React;
-const h = React.createElement;
+// Try loading the modern compiled bundle if built
+let isBundleLoaded = false;
+try {
+  if (typeof document !== 'undefined' && !document.querySelector('link[href*="bundle.css"]')) {
+    const cssLink = document.createElement('link');
+    cssLink.rel = 'stylesheet';
+    cssLink.href = new URL('../dist/assets/bundle.css', import.meta.url).href;
+    document.head.appendChild(cssLink);
+  }
+  const bundleUrl = new URL('../dist/assets/bundle.js', import.meta.url).href;
+  const mod = await import(/* @vite-ignore */ bundleUrl);
+  if (mod) {
+    isBundleLoaded = true;
+  }
+} catch (e) {
+  // If bundle is not yet built, proceed to native React mount
+  isBundleLoaded = false;
+}
 
-// Helper to format date strings cleanly
+// React hooks and createElement reference
+const ReactRef = window.React || {};
+const { useState, useEffect, useCallback, useMemo } = ReactRef;
+const h = ReactRef.createElement;
+
+// Date formatter
 function formatDate(dateStr) {
   if (!dateStr) return 'N/A';
   try {
@@ -19,35 +43,33 @@ function formatDate(dateStr) {
   }
 }
 
-// Helper to format float values
+// Float metric formatter
 function formatMetric(val, decimals = 4) {
   if (val === null || val === undefined || isNaN(val)) return 'N/A';
   return Number(val).toFixed(decimals);
 }
 
-// Health status CSS class helper
+// Status helpers
 function getHealthClass(status) {
   if (!status) return 'insufficient';
-  const s = status.toUpperCase();
+  const s = String(status).toUpperCase();
   if (s === 'HEALTHY') return 'healthy';
   if (s === 'WARNING') return 'warning';
   if (s === 'CRITICAL') return 'critical';
   return 'insufficient';
 }
 
-// Approval status CSS class helper
 function getApprovalClass(status) {
   if (!status) return 'pending';
-  const s = status.toUpperCase();
+  const s = String(status).toUpperCase();
   if (s === 'APPROVED') return 'approved';
   if (s === 'REJECTED') return 'rejected';
   return 'pending';
 }
 
-// Priority badge CSS class helper
 function getPriorityClass(priority) {
   if (!priority) return 'neutral';
-  const p = priority.toUpperCase();
+  const p = String(priority).toUpperCase();
   if (p === 'CRITICAL') return 'critical';
   if (p === 'HIGH') return 'warning';
   if (p === 'MEDIUM') return 'info';
@@ -55,9 +77,9 @@ function getPriorityClass(priority) {
 }
 
 /**
- * Professional Login Screen Component
+ * Login Screen Component
  */
-function LoginScreen({
+export function LoginScreen({
   onLoginSuccess,
   onSwitchToSignup,
   sessionExpired = false,
@@ -71,7 +93,6 @@ function LoginScreen({
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Update username if prefill changes (e.g. following account creation)
   useEffect(() => {
     if (prefillUsername) {
       setUsername(prefillUsername);
@@ -81,8 +102,8 @@ function LoginScreen({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    const trimmedUsername = username.trim();
-    if (!trimmedUsername) {
+    const trimmed = username.trim();
+    if (!trimmed) {
       setError('Please enter your email or username.');
       return;
     }
@@ -93,7 +114,7 @@ function LoginScreen({
 
     setLoading(true);
     try {
-      const res = await api.login(trimmedUsername, password);
+      const res = await api.login(trimmed, password);
       onLoginSuccess(res.user);
     } catch (err) {
       setError(err.message || 'Login failed. Please verify your credentials and try again.');
@@ -112,7 +133,6 @@ function LoginScreen({
         h('p', { className: 'brand-subtitle' }, 'MLOps Decision-Support Platform')
       ),
 
-      // Status notifications & alerts
       error && h('div', { className: 'alert alert-error', style: { marginBottom: '1.25rem' } },
         h('span', null, error)
       ),
@@ -160,7 +180,6 @@ function LoginScreen({
               required: true,
               placeholder: 'Enter your password',
               autoComplete: 'current-password',
-              autoFocus: !!prefillUsername,
             }),
             h('button', {
               type: 'button',
@@ -179,7 +198,7 @@ function LoginScreen({
           disabled: loading,
         },
           loading && h('span', { className: 'spinner-inline' }),
-          loading ? 'Signing In...' : 'Sign In'
+          loading ? 'Signing in...' : 'Sign In'
         )
       ),
 
@@ -189,16 +208,16 @@ function LoginScreen({
           type: 'button',
           className: 'auth-link',
           onClick: onSwitchToSignup,
-        }, 'Sign Up')
+        }, 'Create Account')
       )
     )
   );
 }
 
 /**
- * Professional Registration Screen Component
+ * Signup Screen Component
  */
-function SignupScreen({ onSignupSuccess, onSwitchToLogin }) {
+export function SignupScreen({ onSignupSuccess, onSwitchToLogin }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -211,11 +230,9 @@ function SignupScreen({ onSignupSuccess, onSwitchToLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim();
 
-    // Client-side validations
     if (!trimmedUsername) {
       setError('Username is required.');
       return;
@@ -252,7 +269,6 @@ function SignupScreen({ onSignupSuccess, onSwitchToLogin }) {
         email: trimmedEmail,
         password,
       });
-
       const message = res?.message || 'Account created successfully! Please sign in.';
       onSignupSuccess(res?.user, message, trimmedUsername);
     } catch (err) {
@@ -383,7 +399,7 @@ function SignupScreen({ onSignupSuccess, onSwitchToLogin }) {
 /**
  * Top Navigation Bar
  */
-function Navbar({ user, onLogout, onRefresh, loading }) {
+export function Navbar({ user, onLogout, onRefresh, loading }) {
   const roleClass = user?.role ? user.role.toLowerCase() : 'viewer';
 
   return h('header', { className: 'navbar' },
@@ -415,7 +431,7 @@ function Navbar({ user, onLogout, onRefresh, loading }) {
 /**
  * Guardrails / HITL Banner
  */
-function HITLBanner() {
+export function HITLBanner() {
   return h('div', { className: 'hitl-banner' },
     h('div', { className: 'hitl-banner-text' },
       h('span', { className: 'hitl-pill' }, 'Human-In-The-Loop Advisory'),
@@ -429,7 +445,7 @@ function HITLBanner() {
 /**
  * Overview KPI Cards Grid
  */
-function KPIGrid({ data }) {
+export function KPIGrid({ data }) {
   const models = data?.models_summary || {};
   const monitoring = data?.monitoring_summary || {};
   const health = data?.health_summary || {};
@@ -502,7 +518,7 @@ function KPIGrid({ data }) {
 /**
  * Health Score Progress Meter
  */
-function HealthMeter({ score, status }) {
+export function HealthMeter({ score, status }) {
   const numScore = score !== null && score !== undefined ? Math.max(0, Math.min(100, score)) : 0;
   const barClass = getHealthClass(status);
 
@@ -523,7 +539,7 @@ function HealthMeter({ score, status }) {
 /**
  * Interactive Decision Review Box (Approve / Reject Action Card)
  */
-function DecisionReviewBox({ decision, modelName, userRole, onApprove, onReject, actionLoading }) {
+export function DecisionReviewBox({ decision, modelName, userRole, onApprove, onReject, actionLoading }) {
   if (!decision) return null;
 
   const isPending = decision.approval_status === 'PENDING';
@@ -609,7 +625,7 @@ function DecisionReviewBox({ decision, modelName, userRole, onApprove, onReject,
 /**
  * Model Card Component
  */
-function ModelCard({ model, isSelected, onSelect, onEvaluate, onRealEvaluate, evalResult, actionLoading, userRole }) {
+export function ModelCard({ model, isSelected, onSelect, onEvaluate, onRealEvaluate, evalResult, actionLoading, userRole }) {
   const isEvaluating = actionLoading === `evaluating-${model.model_id}`;
   const isRefEvaluating = actionLoading === `ref-eval-${model.model_id}`;
   const isShiftedEvaluating = actionLoading === `shifted-eval-${model.model_id}`;
@@ -782,7 +798,7 @@ function ModelCard({ model, isSelected, onSelect, onEvaluate, onRealEvaluate, ev
 /**
  * Recent Decisions Audit Table
  */
-function RecentDecisionsTable({ decisions, modelMap }) {
+export function RecentDecisionsTable({ decisions, modelMap }) {
   if (!decisions || decisions.length === 0) {
     return h('div', { className: 'state-container', style: { padding: '2.5rem' } },
       h('div', { className: 'empty-icon' }, '📋'),
@@ -842,7 +858,7 @@ export function App() {
     return (token && storedUser) ? storedUser : null;
   });
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
-  const [authMessage, setAuthMessage] = useState(null); // { type: 'success' | 'info' | 'warning', text: '...' }
+  const [authMessage, setAuthMessage] = useState(null);
   const [prefillUsername, setPrefillUsername] = useState('');
   const [sessionExpired, setSessionExpired] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
@@ -1054,18 +1070,15 @@ export function App() {
   // Find the most urgent pending decision to highlight in the review box
   const pendingDecision = useMemo(() => {
     if (!dashboardData) return null;
-    // Check if selected model has a pending decision
     if (selectedModelId && modelMap[selectedModelId]?.latest_decision?.approval_status === 'PENDING') {
       return modelMap[selectedModelId].latest_decision;
     }
-    // Otherwise, find the first pending decision in recent_decisions or model cards
     if (dashboardData.decision_summary?.recent_decisions) {
       const pending = dashboardData.decision_summary.recent_decisions.find(
         (d) => d.approval_status === 'PENDING'
       );
       if (pending) return pending;
     }
-    // Fallback to selected model's latest decision even if approved/rejected
     if (selectedModelId && modelMap[selectedModelId]?.latest_decision) {
       return modelMap[selectedModelId].latest_decision;
     }
@@ -1151,7 +1164,7 @@ export function App() {
             }, 'Reset Filter')
           ),
 
-          // Pending Decision Review Box (if any pending decision or focused decision exists)
+          // Pending Decision Review Box
           pendingDecision && h('div', { className: 'section' },
             h('div', { className: 'section-header' },
               h('h2', { className: 'section-title' },
@@ -1233,9 +1246,10 @@ export function App() {
   );
 }
 
-// Mount App if root element exists
+// Mount App if root element exists and not already rendered by modern bundle
 const rootEl = document.getElementById('root');
-if (rootEl && window.ReactDOM) {
+if (rootEl && window.ReactDOM && !isBundleLoaded && !rootEl.hasAttribute('data-rendered')) {
+  rootEl.setAttribute('data-rendered', 'true');
   const root = ReactDOM.createRoot(rootEl);
   root.render(h(App));
 }
