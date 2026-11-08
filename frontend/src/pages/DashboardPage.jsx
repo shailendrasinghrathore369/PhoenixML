@@ -61,8 +61,8 @@ export function DashboardPage({
 
       {/* Model Filter Bar */}
       <div className="filter-bar">
-        <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Filter className="icon-sm" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
+        <div className="filter-group">
+          <Filter className="icon-sm filter-icon" aria-hidden="true" />
           <span className="filter-label">
             Scope / Model Filter:
           </span>
@@ -98,8 +98,8 @@ export function DashboardPage({
       {pendingDecision && (
         <section className="section">
           <div className="section-header">
-            <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Zap className="icon-sm" style={{ color: '#fbbf24' }} aria-hidden="true" />
+            <h2 className="section-title">
+              <Zap className="icon-sm text-warning" aria-hidden="true" />
               <span>
                 {pendingDecision.approval_status === 'PENDING'
                   ? 'Pending Operator Action (Mandatory Review)'
@@ -121,11 +121,11 @@ export function DashboardPage({
       {/* Model Inventory Section */}
       <section className="section">
         <div className="section-header">
-          <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Cpu className="icon-sm" style={{ color: '#60a5fa' }} aria-hidden="true" />
+          <h2 className="section-title">
+            <Cpu className="icon-sm text-primary" aria-hidden="true" />
             <span>{selectedModelId ? 'Focused Model Card' : 'Registered Model Fleet'}</span>
           </h2>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+          <span className="section-meta">
             {modelCards.length} model{modelCards.length === 1 ? '' : 's'} displayed
           </span>
         </div>
@@ -160,11 +160,11 @@ export function DashboardPage({
       {/* Recent Decisions Audit Trail Section */}
       <section className="section">
         <div className="section-header">
-          <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <History className="icon-sm" style={{ color: '#818cf8' }} aria-hidden="true" />
+          <h2 className="section-title">
+            <History className="icon-sm text-indigo" aria-hidden="true" />
             <span>Recent Decision Audit Trail</span>
           </h2>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+          <span className="section-meta">
             Total Recorded: {dashboardData?.decision_summary?.total_decisions || 0}
           </span>
         </div>

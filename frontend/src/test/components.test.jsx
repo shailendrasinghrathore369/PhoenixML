@@ -10,7 +10,14 @@ import { ErrorState } from '../components/ErrorState.jsx';
 import { ConfirmationDialog } from '../components/ConfirmationDialog.jsx';
 import { DataTable } from '../components/DataTable.jsx';
 import { HITLBanner } from '../components/HITLBanner.jsx';
-import { ToastItem } from '../components/Toast.jsx';
+import { ToastItem, ToastContainer } from '../components/Toast.jsx';
+import { ModelCard } from '../components/ModelCard.jsx';
+import { DecisionReviewBox } from '../components/DecisionReviewBox.jsx';
+import { RecentDecisionsTable } from '../components/RecentDecisionsTable.jsx';
+import { LoginPage } from '../pages/LoginPage.jsx';
+import { SignupPage } from '../pages/SignupPage.jsx';
+import { DashboardPage } from '../pages/DashboardPage.jsx';
+import { ThemeProvider } from '../context/ThemeContext.jsx';
 
 describe('StatusBadge', () => {
   it('renders healthy status variant', () => {
@@ -188,5 +195,272 @@ describe('ToastItem', () => {
     const closeBtn = screen.getByTitle('Dismiss notification');
     fireEvent.click(closeBtn);
     expect(handleDismiss).toHaveBeenCalledWith(1);
+  });
+
+  it('uses role="status" for non-error notifications and role="alert" for error', () => {
+    const { rerender } = render(
+      <ToastItem
+        toast={{ id: 1, type: 'success', title: 'Done', message: 'Success' }}
+        onDismiss={() => {}}
+      />
+    );
+    expect(screen.getByRole('status')).toBeInTheDocument();
+
+    rerender(
+      <ToastItem
+        toast={{ id: 2, type: 'error', title: 'Fail', message: 'Error' }}
+        onDismiss={() => {}}
+      />
+    );
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+});
+
+describe('ModelCard', () => {
+  it('renders model information, health score, and actions', () => {
+    const model = {
+      model_id: 'm1234567-89ab',
+      name: 'TestModel',
+      framework: 'scikit-learn',
+      status: 'ACTIVE',
+      latest_health_score: 91.2,
+      latest_health_status: 'HEALTHY',
+      observation_count: 50,
+      latest_f1_score: 0.92,
+    };
+    render(
+      <ModelCard
+        model={model}
+        isSelected={false}
+        onSelect={() => {}}
+        onEvaluate={() => {}}
+        onRealEvaluate={() => {}}
+      />
+    );
+    expect(screen.getByText('TestModel')).toBeInTheDocument();
+    expect(screen.getByText(/scikit-learn/i)).toBeInTheDocument();
+    expect(screen.getByText('ACTIVE')).toBeInTheDocument();
+    expect(screen.getByText('50')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /inspect model/i })).toBeInTheDocument();
+  });
+});
+
+describe('DecisionReviewBox', () => {
+  it('renders AIMD decision details and human approval mandatory notice', () => {
+    const decision = {
+      id: 42,
+      model_id: 'm123',
+      recommended_action: 'RETRAIN_MODEL',
+      priority: 'HIGH',
+      approval_status: 'PENDING',
+      rationale: 'Concept drift detected in incoming data.',
+      requires_human_approval: true,
+      health_score: 65.4,
+      health_status: 'WARNING',
+      confidence: 0.88,
+    };
+    render(
+      <DecisionReviewBox
+        decision={decision}
+        modelName="TestModel"
+        userRole="ML_ENGINEER"
+        onApprove={() => {}}
+        onReject={() => {}}
+      />
+    );
+    expect(screen.getByText('RETRAIN_MODEL')).toBeInTheDocument();
+    expect(screen.getByText(/Concept drift detected/i)).toBeInTheDocument();
+    expect(screen.getByText('YES (Mandatory)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /approve recommendation/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reject recommendation/i })).toBeInTheDocument();
+  });
+});
+
+describe('RecentDecisionsTable', () => {
+  it('renders table headers with scope="col" and decision items', () => {
+    const decisions = [
+      {
+        id: 1,
+        created_at: '2026-11-08T12:00:00Z',
+        model_id: 'm123',
+        recommended_action: 'RECALIBRATE_THRESHOLDS',
+        priority: 'MEDIUM',
+        health_score: 75.0,
+        confidence: 0.92,
+        approval_status: 'APPROVED',
+      },
+    ];
+    render(<RecentDecisionsTable decisions={decisions} modelMap={{ m123: { name: 'FraudDetector' } }} />);
+    expect(screen.getByText('FraudDetector')).toBeInTheDocument();
+    expect(screen.getByText('RECALIBRATE_THRESHOLDS')).toBeInTheDocument();
+    const ths = screen.getAllByRole('columnheader');
+    expect(ths.length).toBeGreaterThan(0);
+    ths.forEach((th) => {
+      expect(th).toHaveAttribute('scope', 'col');
+    });
+  });
+});
+
+describe('LoginPage', () => {
+  it('renders login form, fields, and handles input', async () => {
+    const handleLogin = vi.fn();
+    const handleSwitch = vi.fn();
+
+    render(
+      <ThemeProvider>
+        <LoginPage onLogin={handleLogin} onSwitchToSignup={handleSwitch} />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('PhoenixML')).toBeInTheDocument();
+    expect(screen.getByLabelText(/email or username/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/email or username/i), {
+      target: { value: 'admin' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'Secret123!' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    expect(handleLogin).toHaveBeenCalledWith('admin', 'Secret123!');
+  });
+
+  it('toggles password visibility', () => {
+    render(
+      <ThemeProvider>
+        <LoginPage onLogin={() => {}} onSwitchToSignup={() => {}} />
+      </ThemeProvider>
+    );
+
+    const passwordInput = screen.getByLabelText('Password');
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    const toggleBtn = screen.getByRole('button', { name: /show password/i });
+    fireEvent.click(toggleBtn);
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    fireEvent.click(toggleBtn);
+    expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  it('displays session expired warning and switch link', () => {
+    const handleSwitch = vi.fn();
+    render(
+      <ThemeProvider>
+        <LoginPage
+          onLogin={() => {}}
+          onSwitchToSignup={handleSwitch}
+          sessionExpired={true}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText(/your session has expired/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /register here/i }));
+    expect(handleSwitch).toHaveBeenCalled();
+  });
+});
+
+describe('SignupPage', () => {
+  it('renders registration form and validates password match', async () => {
+    const handleSignup = vi.fn();
+    render(
+      <ThemeProvider>
+        <SignupPage onSignup={handleSignup} onSwitchToLogin={() => {}} />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByRole('heading', { name: /create account/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^username/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/^username/i), { target: { value: 'operator1' } });
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'op@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'mismatch321' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+    expect(handleSignup).not.toHaveBeenCalled();
+
+    // Now fix confirmation password
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(handleSignup).toHaveBeenCalledWith({
+      username: 'operator1',
+      email: 'op@example.com',
+      password: 'password123',
+    });
+  });
+
+  it('switches to login page on click', () => {
+    const handleSwitch = vi.fn();
+    render(
+      <ThemeProvider>
+        <SignupPage onSignup={() => {}} onSwitchToLogin={handleSwitch} />
+      </ThemeProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    expect(handleSwitch).toHaveBeenCalled();
+  });
+});
+
+describe('DashboardPage', () => {
+  it('renders dashboard with model list, KPIs, and allows filtering', () => {
+    const setSelectedModelId = vi.fn();
+    const dashboardData = {
+      model_cards: [
+        {
+          model_id: 'm1',
+          name: 'SpamClassifier',
+          framework: 'scikit-learn',
+          status: 'ACTIVE',
+          latest_health_score: 95,
+          latest_health_status: 'HEALTHY',
+          observation_count: 120,
+          latest_f1_score: 0.94,
+        },
+      ],
+      decision_summary: {
+        total_decisions: 15,
+        recent_decisions: [],
+      },
+    };
+
+    render(
+      <ThemeProvider>
+        <DashboardPage
+          user={{ role: 'ADMIN' }}
+          dashboardData={dashboardData}
+          selectedModelId=""
+          setSelectedModelId={setSelectedModelId}
+          loading={false}
+          evalResults={{}}
+          modelMap={{ m1: dashboardData.model_cards[0] }}
+          handleEvaluate={() => {}}
+          handleRealEvaluate={() => {}}
+          handleApprove={() => {}}
+          handleReject={() => {}}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('Fleet Operations & Decision Support')).toBeInTheDocument();
+    expect(screen.getByText('Scope / Model Filter:')).toBeInTheDocument();
+    expect(screen.getByText('SpamClassifier')).toBeInTheDocument();
+    expect(screen.getByText('1 model displayed')).toBeInTheDocument();
+    expect(screen.getByText('Total Recorded: 15')).toBeInTheDocument();
+
+    const select = screen.getByLabelText(/filter by registered model/i);
+    fireEvent.change(select, { target: { value: 'm1' } });
+    expect(setSelectedModelId).toHaveBeenCalledWith('m1');
   });
 });

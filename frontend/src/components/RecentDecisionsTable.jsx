@@ -2,7 +2,6 @@ import React from 'react';
 import { DataTable } from './DataTable.jsx';
 import { StatusBadge } from './StatusBadge.jsx';
 import { formatDate, formatMetric, getApprovalClass, getPriorityClass } from '../lib/utils.js';
-import { History } from 'lucide-react';
 
 export function RecentDecisionsTable({ decisions = [], modelMap = {}, className }) {
   const columns = [
@@ -10,7 +9,7 @@ export function RecentDecisionsTable({ decisions = [], modelMap = {}, className 
       key: 'created_at',
       header: 'Date & Time',
       render: (val) => (
-        <span className="font-mono text-xs text-slate-300 whitespace-nowrap">
+        <span className="audit-cell-date">
           {formatDate(val)}
         </span>
       ),
@@ -21,7 +20,7 @@ export function RecentDecisionsTable({ decisions = [], modelMap = {}, className 
       render: (val) => {
         const modelName = modelMap[val]?.name || `${String(val).substring(0, 8)}...`;
         return (
-          <span className="font-semibold text-slate-200">
+          <span className="audit-cell-model">
             {modelName}
           </span>
         );
@@ -31,7 +30,7 @@ export function RecentDecisionsTable({ decisions = [], modelMap = {}, className 
       key: 'recommended_action',
       header: 'Recommended Action',
       render: (val) => (
-        <span className="font-semibold text-slate-100">
+        <span className="audit-cell-action">
           {val}
         </span>
       ),
@@ -50,7 +49,7 @@ export function RecentDecisionsTable({ decisions = [], modelMap = {}, className 
       header: 'Health Score',
       align: 'right',
       render: (val) => (
-        <span className="font-mono text-xs text-slate-300">
+        <span className="audit-cell-metric">
           {val !== null && val !== undefined ? `${formatMetric(val, 1)}` : 'N/A'}
         </span>
       ),
@@ -60,7 +59,7 @@ export function RecentDecisionsTable({ decisions = [], modelMap = {}, className 
       header: 'Confidence',
       align: 'right',
       render: (val) => (
-        <span className="font-mono text-xs text-slate-300">
+        <span className="audit-cell-metric">
           {val !== null && val !== undefined ? `${(val * 100).toFixed(1)}%` : 'N/A'}
         </span>
       ),

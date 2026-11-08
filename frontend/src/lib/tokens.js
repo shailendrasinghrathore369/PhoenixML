@@ -19,6 +19,7 @@ export const colors = {
     card: '#1e293b',
     cardHover: '#243247',
     overlay: '#1e293b',
+    tableHeader: '#0f172a',
     border: '#334155',
     borderSubtle: '#1e293b',
     borderHover: '#475569',
@@ -90,6 +91,137 @@ export const colors = {
   },
 };
 
+/**
+ * Light Theme Color Palette (Vercel-inspired high contrast)
+ */
+export const lightColors = {
+  // Backgrounds: Clean, crisp whites and cool slates
+  background: {
+    canvas: '#f8fafc',       // Slate 50 cool background
+    primary: '#ffffff',      // Pure white primary surface
+    secondary: '#f1f5f9',    // Slate 100 secondary container
+    tertiary: '#e2e8f0',     // Slate 200 elevated container
+  },
+
+  // Surfaces: Layered neutral surfaces
+  surface: {
+    base: '#ffffff',
+    subtle: '#f8fafc',
+    card: '#ffffff',
+    cardHover: '#f8fafc',
+    overlay: 'rgba(15, 23, 42, 0.45)',
+    tableHeader: '#f1f5f9',
+    border: '#e2e8f0',
+    borderSubtle: '#f1f5f9',
+    borderHover: '#94a3b8',
+    muted: '#e2e8f0',
+  },
+
+  // Brand / Primary: True Cobalt
+  primary: {
+    50: '#eff6ff',
+    100: '#dbeafe',
+    500: '#3b82f6',
+    600: '#2563eb',          // Brand cobalt primary
+    700: '#1d4ed8',
+    hover: '#1d4ed8',
+    active: '#1e40af',
+    glow: 'rgba(37, 99, 235, 0.15)',
+  },
+
+  // State: Emerald Healthy
+  healthy: {
+    light: '#ecfdf5',
+    base: '#059669',         // Emerald healthy (WCAG AA compliant in light)
+    hover: '#047857',
+    bg: 'rgba(16, 185, 129, 0.10)',
+    border: 'rgba(16, 185, 129, 0.30)',
+    glow: 'rgba(16, 185, 129, 0.15)',
+  },
+
+  // State: Amber Warning
+  warning: {
+    light: '#fffbeb',
+    base: '#d97706',         // Amber warning (WCAG AA compliant in light)
+    hover: '#b45309',
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.30)',
+    glow: 'rgba(245, 158, 11, 0.15)',
+  },
+
+  // State: Rose / Red Critical
+  critical: {
+    light: '#fff1f2',
+    base: '#e11d48',         // Rose critical (WCAG AA compliant in light)
+    hover: '#be123c',
+    bg: 'rgba(244, 63, 94, 0.08)',
+    border: 'rgba(244, 63, 94, 0.28)',
+    glow: 'rgba(244, 63, 94, 0.15)',
+  },
+
+  // Text: High-contrast light theme palette (WCAG AAA/AA compliant)
+  text: {
+    primary: '#0f172a',      // Slate 900
+    secondary: '#334155',    // Slate 700
+    muted: '#64748b',        // Slate 500
+    dim: '#94a3b8',          // Slate 400
+    inverse: '#ffffff',      // Light text on dark surfaces
+  },
+
+  // Status / Decisions
+  approval: {
+    pending: '#d97706',
+    pendingBg: 'rgba(217, 119, 6, 0.10)',
+    pendingBorder: 'rgba(217, 119, 6, 0.35)',
+    approved: '#059669',
+    approvedBg: 'rgba(5, 150, 105, 0.10)',
+    approvedBorder: 'rgba(5, 150, 105, 0.35)',
+    rejected: '#dc2626',
+    rejectedBg: 'rgba(220, 38, 38, 0.10)',
+    rejectedBorder: 'rgba(220, 38, 38, 0.35)',
+  },
+};
+
+/**
+ * Chart Color Palette (Aligned with Section 4.3 in DESIGN.md)
+ */
+export const chartColors = {
+  dark: {
+    baseline: '#10b981',       // Emerald
+    production: '#3b82f6',     // Cobalt
+    shifted: '#f43f5e',        // Rose
+    warning: '#f59e0b',        // Amber
+    confidence: 'rgba(59, 130, 246, 0.12)',
+    grid: 'rgba(255, 255, 255, 0.06)',
+  },
+  light: {
+    baseline: '#059669',
+    production: '#2563eb',
+    shifted: '#e11d48',
+    warning: '#d97706',
+    confidence: 'rgba(37, 99, 235, 0.10)',
+    grid: '#e2e8f0',
+  },
+};
+
+/**
+ * Theme Definitions
+ */
+export const themes = {
+  dark: {
+    id: 'dark',
+    name: 'Dark',
+    colors,
+    charts: chartColors.dark,
+  },
+  light: {
+    id: 'light',
+    name: 'Light',
+    colors: lightColors,
+    charts: chartColors.light,
+  },
+};
+
 export const typography = {
   fontSans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif',
   fontMono: 'ui-monospace, SFMono-Regular, "Fira Code", Menlo, Monaco, Consolas, monospace',
@@ -151,6 +283,7 @@ export const shadows = {
 
 export const focus = {
   ring: '0 0 0 2px #0f172a, 0 0 0 4px #3b82f6',
+  ringHealthy: '0 0 0 2px #0f172a, 0 0 0 4px #10b981',
   ringWarning: '0 0 0 2px #0f172a, 0 0 0 4px #f59e0b',
   ringCritical: '0 0 0 2px #0f172a, 0 0 0 4px #f43f5e',
 };

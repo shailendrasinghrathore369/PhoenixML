@@ -1,4 +1,5 @@
 import React from 'react';
+import { ThemeProvider } from './hooks/useTheme.js';
 import { useToast } from './hooks/useToast.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useDashboard } from './hooks/useDashboard.js';
@@ -8,7 +9,7 @@ import { SignupPage } from './pages/SignupPage.jsx';
 import { DashboardPage } from './pages/DashboardPage.jsx';
 import { ToastContainer } from './components/Toast.jsx';
 
-export function App() {
+function AppContent() {
   const toast = useToast();
   const auth = useAuth(toast);
   const dashboard = useDashboard(auth.user, toast);
@@ -71,6 +72,14 @@ export function App() {
         handleReject={dashboard.handleReject}
       />
     </DashboardLayout>
+  );
+}
+
+export function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

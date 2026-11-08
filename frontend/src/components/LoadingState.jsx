@@ -9,13 +9,10 @@ export function LoadingState({
     <div
       role="status"
       aria-live="polite"
-      className={cn(
-        'state-container flex flex-col items-center justify-center p-12 text-center',
-        className
-      )}
+      className={cn('state-container loading-state', className)}
     >
-      <div className="spinner w-8 h-8 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin mb-4" />
-      <p className="text-xs text-slate-400 font-medium tracking-wide">
+      <div className="spinner" aria-hidden="true" />
+      <p className="loading-message">
         {message}
       </p>
     </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, RefreshCw, LogOut, User as UserIcon } from 'lucide-react';
 import { StatusBadge } from './StatusBadge.jsx';
+import { ThemeToggle } from './ThemeToggle.jsx';
 import { cn } from '../lib/utils.js';
 
 export function AppHeader({ user, onLogout, onRefresh, loading }) {
@@ -34,6 +35,8 @@ export function AppHeader({ user, onLogout, onRefresh, loading }) {
             {user?.email || user?.username}
           </span>
         </div>
+
+        <ThemeToggle size="sm" />
 
         <button
           type="button"

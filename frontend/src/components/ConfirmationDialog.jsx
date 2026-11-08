@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { cn } from '../lib/utils.js';
 
@@ -14,52 +14,110 @@ export function ConfirmationDialog({
   loading = false,
   children,
 }) {
-  // Close on Escape key
+  const dialogRef = useRef(null);
+  const previouslyFocusedElement = useRef(null);
+
+  // Focus trap, initial focus, and focus return
   useEffect(() => {
     if (!isOpen) return;
+
+    // Save invoking element
+    previouslyFocusedElement.current = document.activeElement;
+
+    // Focus the first focusable element inside the dialog after mount
+    const timer = setTimeout(() => {
+      if (!dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length > 0) {
+        focusable[0].focus();
+      } else {
+        dialogRef.current.focus();
+      }
+    }, 0);
+
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && !loading) {
+        e.preventDefault();
         onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const firstElement = focusable[0];
+        const lastElement = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      // Restore focus to invoking element
+      if (previouslyFocusedElement.current && typeof previouslyFocusedElement.current.focus === 'function') {
+        previouslyFocusedElement.current.focus();
+      }
+    };
   }, [isOpen, loading, onClose]);
 
   if (!isOpen) return null;
 
-  const confirmColors = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
-    success: 'bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500',
-    danger: 'bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500',
-  }[confirmVariant] || 'bg-blue-600 hover:bg-blue-700 text-white';
+  const confirmVariantClass = {
+    primary: 'btn-primary',
+    success: 'btn-success',
+    danger: 'btn-danger',
+  }[confirmVariant] || 'btn-primary';
+
+  const iconVariantClass = {
+    primary: 'primary',
+    success: 'success',
+    danger: 'danger',
+  }[confirmVariant] || 'primary';
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="dialog-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby="dialog-title"
+      aria-describedby="dialog-description"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) {
+          onClose();
+        }
+      }}
     >
       <div
-        className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-900 shadow-2xl p-6 text-slate-100 relative focus:outline-none"
+        ref={dialogRef}
+        className="dialog-card"
         onClick={(e) => e.stopPropagation()}
+        tabIndex={-1}
       >
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'p-2 rounded-lg flex items-center justify-center',
-                confirmVariant === 'danger'
-                  ? 'bg-rose-500/15 text-rose-400'
-                  : confirmVariant === 'success'
-                  ? 'bg-emerald-500/15 text-emerald-400'
-                  : 'bg-blue-500/15 text-blue-400'
-              )}
-            >
-              <AlertTriangle className="w-5 h-5" />
+        <div className="dialog-header">
+          <div className="dialog-title-group">
+            <div className={cn('dialog-icon-box', iconVariantClass)}>
+              <AlertTriangle className="icon-md" />
             </div>
-            <h2 id="dialog-title" className="text-base font-semibold text-slate-100">
+            <h2 id="dialog-title" className="dialog-title">
               {title}
             </h2>
           </div>
@@ -67,25 +125,26 @@ export function ConfirmationDialog({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="p-1.5 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="dialog-close-btn"
             title="Close dialog"
+            aria-label="Close dialog"
           >
-            <X className="w-4 h-4" />
+            <X className="icon-sm" />
           </button>
         </div>
 
-        <p className="text-xs text-slate-300 leading-relaxed mb-4">
+        <p id="dialog-description" className="dialog-description">
           {description}
         </p>
 
-        {children && <div className="mb-6">{children}</div>}
+        {children && <div className="dialog-body">{children}</div>}
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800/80">
+        <div className="dialog-actions">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-3.5 py-2 text-xs font-medium rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-300 hover:text-slate-100 transition-colors disabled:opacity-50"
+            className="btn btn-outline"
           >
             {cancelText}
           </button>
@@ -93,12 +152,9 @@ export function ConfirmationDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={cn(
-              'px-4 py-2 text-xs font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 inline-flex items-center gap-2',
-              confirmColors
-            )}
+            className={cn('btn', confirmVariantClass)}
           >
-            {loading && <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />}
+            {loading && <span className="dialog-btn-spinner" aria-hidden="true" />}
             <span>{loading ? 'Processing...' : confirmText}</span>
           </button>
         </div>

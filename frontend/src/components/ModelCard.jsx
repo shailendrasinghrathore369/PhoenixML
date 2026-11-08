@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, FlaskConical, TrendingDown, Zap, Search, CheckCircle } from 'lucide-react';
+import { Cpu, FlaskConical, TrendingDown, Zap, Search } from 'lucide-react';
 import { StatusBadge } from './StatusBadge.jsx';
 import { HealthIndicator } from './HealthIndicator.jsx';
 import { cn, formatDate, formatMetric, getApprovalClass, getHealthClass } from '../lib/utils.js';
@@ -30,23 +30,17 @@ export function ModelCard({
 
   return (
     <div
-      className={cn(
-        'model-card flex flex-col justify-between p-5 rounded-xl border bg-slate-900/80 text-slate-100 shadow-sm transition-all',
-        isSelected
-          ? 'selected border-blue-500/60 bg-slate-900 shadow-[0_0_15px_rgba(37,99,235,0.15)] ring-1 ring-blue-500/40'
-          : 'border-slate-800 hover:border-slate-700 hover:bg-slate-800/40',
-        className
-      )}
+      className={cn('model-card', isSelected && 'selected', className)}
     >
-      <div className="model-card-top flex items-start justify-between gap-3 mb-4">
+      <div className="model-card-top">
         <div>
-          <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-blue-400 flex-shrink-0" />
-            <h3 className="model-name text-sm font-bold text-slate-100 truncate max-w-[200px]">
+          <div className="model-title-wrap">
+            <Cpu className="icon-sm model-icon" />
+            <h3 className="model-name">
               {model.name}
             </h3>
           </div>
-          <div className="model-meta text-[11px] text-slate-400 mt-1 font-mono">
+          <div className="model-meta">
             {model.framework} · ID: {String(model.model_id).substring(0, 8)}...
           </div>
         </div>
@@ -56,7 +50,7 @@ export function ModelCard({
       </div>
 
       {/* Health Meter */}
-      <div className="mb-4">
+      <div className="model-health-section">
         <HealthIndicator
           score={model.latest_health_score}
           status={model.latest_health_status}
@@ -64,28 +58,28 @@ export function ModelCard({
       </div>
 
       {/* Inline Metrics */}
-      <div className="metrics-row grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/60 mb-4 text-center">
+      <div className="metrics-row">
         <div className="metric-item">
-          <span className="metric-item-name block text-[10px] uppercase font-semibold text-slate-400">
+          <span className="metric-item-name">
             Observations
           </span>
-          <span className="metric-item-val text-xs font-bold font-mono text-slate-200">
+          <span className="metric-item-val">
             {model.observation_count || 0}
           </span>
         </div>
         <div className="metric-item">
-          <span className="metric-item-name block text-[10px] uppercase font-semibold text-slate-400">
+          <span className="metric-item-name">
             Latest F1
           </span>
-          <span className="metric-item-val text-xs font-bold font-mono text-slate-200">
+          <span className="metric-item-val">
             {formatMetric(model.latest_f1_score, 3)}
           </span>
         </div>
         <div className="metric-item">
-          <span className="metric-item-name block text-[10px] uppercase font-semibold text-slate-400">
+          <span className="metric-item-name">
             Health Status
           </span>
-          <span className="mt-0.5 inline-block">
+          <span className="metric-item-badge">
             <StatusBadge variant={getHealthClass(model.latest_health_status)} size="sm">
               {model.latest_health_status || 'NO_DATA'}
             </StatusBadge>
@@ -97,60 +91,58 @@ export function ModelCard({
       {evalResult && evalResult.metrics && (
         <div
           className={cn(
-            'p-3 rounded-lg border text-xs mb-4 animate-in fade-in',
-            evalResult.datasetName === 'shifted'
-              ? 'bg-rose-950/20 border-rose-500/35 text-rose-200'
-              : 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200'
+            'eval-result-banner',
+            evalResult.datasetName === 'shifted' ? 'shifted' : 'reference'
           )}
         >
-          <div className="flex items-center justify-between font-semibold mb-2">
-            <span className="flex items-center gap-1.5">
+          <div className="eval-result-header">
+            <span className="eval-result-title">
               {evalResult.datasetName === 'shifted' ? (
                 <>
-                  <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
-                  <span className="text-rose-400">📉 Shifted Evaluation Results (Degraded):</span>
+                  <TrendingDown className="icon-xs" />
+                  <span>📉 Shifted Evaluation Results (Degraded):</span>
                 </>
               ) : (
                 <>
-                  <FlaskConical className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-400">🔬 Reference Evaluation Results:</span>
+                  <FlaskConical className="icon-xs" />
+                  <span>🔬 Reference Evaluation Results:</span>
                 </>
               )}
             </span>
-            <span className="text-[10px] font-mono text-slate-400">
+            <span className="eval-result-sample-count">
               {evalResult.metrics.prediction_count} test samples
             </span>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 text-center py-1">
+          <div className="eval-result-metrics-grid">
             <div>
-              <div className="text-[10px] text-slate-400">Accuracy</div>
-              <div className="font-bold font-mono text-slate-100">
+              <div className="eval-metric-label">Accuracy</div>
+              <div className="eval-metric-val">
                 {(evalResult.metrics.accuracy * 100).toFixed(2)}%
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-slate-400">F1 Score</div>
-              <div className="font-bold font-mono text-slate-100">
+              <div className="eval-metric-label">F1 Score</div>
+              <div className="eval-metric-val">
                 {(evalResult.metrics.f1_score * 100).toFixed(2)}%
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-slate-400">Precision</div>
-              <div className="font-bold font-mono text-slate-100">
+              <div className="eval-metric-label">Precision</div>
+              <div className="eval-metric-val">
                 {(evalResult.metrics.precision * 100).toFixed(2)}%
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-slate-400">Recall</div>
-              <div className="font-bold font-mono text-slate-100">
+              <div className="eval-metric-label">Recall</div>
+              <div className="eval-metric-val">
                 {(evalResult.metrics.recall * 100).toFixed(2)}%
               </div>
             </div>
           </div>
 
           {evalResult.metrics.true_positives !== undefined && (
-            <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-400">
+            <div className="eval-confusion-row">
               <span>TN: {evalResult.metrics.true_negatives}</span>
               <span>FP: {evalResult.metrics.false_positives}</span>
               <span>FN: {evalResult.metrics.false_negatives}</span>
@@ -162,39 +154,35 @@ export function ModelCard({
 
       {/* Latest Decision snippet */}
       {hasDecision ? (
-        <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-xs mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-slate-400 font-medium">Latest Recommendation:</span>
+        <div className="model-decision-snippet">
+          <div className="model-decision-snippet-header">
+            <span className="model-decision-label">Latest Recommendation:</span>
             <StatusBadge variant={getApprovalClass(decision.approval_status)} size="sm">
               {decision.approval_status}
             </StatusBadge>
           </div>
-          <div className="font-semibold text-slate-200 truncate">
+          <div className="model-decision-action">
             {decision.recommended_action}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">
+          <div className="model-decision-meta">
             Priority: {decision.priority} · {formatDate(decision.created_at)}
           </div>
         </div>
       ) : (
-        <div className="text-xs text-slate-400 italic p-3 text-center mb-4 border border-dashed border-slate-800 rounded-lg">
+        <div className="model-decision-snippet-empty">
           No evaluation decisions recorded yet.
         </div>
       )}
 
       {/* Card Actions */}
-      <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-800/80 mt-auto">
+      <div className="model-card-actions">
         <button
           type="button"
           onClick={() => onSelect(model.model_id)}
-          className={cn(
-            'btn flex-1 min-w-[110px] inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors',
-            isSelected
-              ? 'btn-primary bg-blue-600 text-white hover:bg-blue-700'
-              : 'btn-secondary bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-          )}
+          className={cn('btn', isSelected ? 'btn-primary' : 'btn-outline')}
+          aria-label={isSelected ? `Focused on model ${model.name}` : `Inspect model ${model.name}`}
         >
-          <Search className="w-3.5 h-3.5" />
+          <Search className="icon-sm" />
           <span>{isSelected ? 'Focused' : 'Inspect Model'}</span>
         </button>
 
@@ -208,12 +196,13 @@ export function ModelCard({
                 ? 'Viewers cannot run real model evaluations'
                 : 'Evaluate the model on its original holdout test set.'
             }
-            className="btn btn-success flex-1 min-w-[160px] inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-50"
+            className="btn btn-success"
+            aria-label="Run reference evaluation on holdout test set"
           >
             {isRefEvaluating ? (
-              <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              <span className="btn-spinner" aria-hidden="true" />
             ) : (
-              <FlaskConical className="w-3.5 h-3.5" />
+              <FlaskConical className="icon-sm" />
             )}
             <span>{isRefEvaluating ? 'Evaluating Reference...' : '🔬 Run Reference Evaluation'}</span>
           </button>
@@ -229,12 +218,13 @@ export function ModelCard({
                 ? 'Viewers cannot run real model evaluations'
                 : 'Evaluate the same trained model on the new shifted operational dataset.'
             }
-            className="btn flex-1 min-w-[160px] inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors disabled:opacity-50"
+            className="btn btn-warning"
+            aria-label="Run shifted data evaluation"
           >
             {isShiftedEvaluating ? (
-              <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              <span className="btn-spinner" aria-hidden="true" />
             ) : (
-              <TrendingDown className="w-3.5 h-3.5" />
+              <TrendingDown className="icon-sm" />
             )}
             <span>{isShiftedEvaluating ? 'Evaluating Shifted...' : '📉 Run Shifted Data Evaluation'}</span>
           </button>
@@ -251,18 +241,19 @@ export function ModelCard({
               ? 'No monitoring observations. Run evaluation first.'
               : 'Trigger AIMD Evaluation'
           }
-          className="btn btn-outline flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-200 transition-colors disabled:opacity-50"
+          className="btn btn-outline"
+          aria-label="Trigger AIMD automated evaluation"
         >
           {isEvaluating ? (
-            <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 border-t-blue-500 animate-spin" />
+            <span className="btn-spinner" aria-hidden="true" />
           ) : (
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <Zap className="icon-sm text-warning" />
           )}
           <span>{isEvaluating ? 'Evaluating...' : '⚡ Trigger AIMD'}</span>
         </button>
 
         {showRealEval && (
-          <div className="w-full text-center text-[11px] text-slate-400 italic mt-1">
+          <div className="model-eval-disclaimer">
             The model is not retrained. Only the evaluation data changes.
           </div>
         )}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle, XCircle, Lock, ShieldCheck, HelpCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Lock } from 'lucide-react';
 import { StatusBadge } from './StatusBadge.jsx';
 import { ConfirmationDialog } from './ConfirmationDialog.jsx';
 import { cn, formatDate, formatMetric, getApprovalClass, getPriorityClass } from '../lib/utils.js';
@@ -41,18 +41,12 @@ export function DecisionReviewBox({
 
   return (
     <div
-      className={cn(
-        'decision-box p-6 rounded-xl border bg-slate-900/90 text-slate-100 shadow-md transition-all mb-6',
-        isPending
-          ? 'highlight border-amber-500/40 bg-gradient-to-b from-slate-900 to-amber-950/10 shadow-[0_0_20px_rgba(245,158,11,0.08)]'
-          : 'border-slate-800',
-        className
-      )}
+      className={cn('decision-box', isPending && 'highlight', className)}
     >
-      <div className="decision-header flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-800">
+      <div className="decision-header">
         <div>
-          <div className="flex items-center gap-2.5 flex-wrap mb-1.5">
-            <span className="decision-action-title text-lg font-bold text-slate-100">
+          <div className="decision-title-group">
+            <span className="decision-action-title">
               {decision.recommended_action}
             </span>
             <StatusBadge variant={getPriorityClass(decision.priority)} size="sm">
@@ -62,54 +56,54 @@ export function DecisionReviewBox({
               {decision.approval_status}
             </StatusBadge>
           </div>
-          <div className="text-xs text-slate-400 font-mono">
+          <div className="decision-meta">
             Model: {modelName || decision.model_id} · Decision ID: {decision.id} · Evaluated: {formatDate(decision.created_at)}
           </div>
         </div>
       </div>
 
-      <div className="decision-rationale text-xs text-slate-300 leading-relaxed bg-slate-950/50 p-3.5 rounded-lg border border-slate-800/80 mb-3">
-        <strong className="text-slate-100 font-semibold">Rationale: </strong>
+      <div className="decision-rationale-box">
+        <strong className="decision-rationale-heading">Rationale: </strong>
         <span>{decision.rationale || 'No rationale recorded.'}</span>
       </div>
 
       {decision.explanation && (
-        <div className="decision-rationale text-xs text-slate-400 italic bg-slate-950/30 p-3.5 rounded-lg border border-slate-800/50 mb-4">
-          <strong className="text-slate-300 font-medium not-italic">Explanation: </strong>
+        <div className="decision-explanation-box">
+          <strong className="decision-explanation-heading">Explanation: </strong>
           <span>{decision.explanation}</span>
         </div>
       )}
 
-      <div className="decision-details-grid grid grid-cols-2 md:grid-cols-4 gap-3 p-3.5 rounded-lg bg-slate-950/40 border border-slate-800/60 mb-5 text-xs">
-        <div>
-          <div className="decision-detail-label text-slate-400 mb-1">Health Score at Decision</div>
-          <div className="decision-detail-val font-semibold font-mono text-slate-100">
+      <div className="decision-details-grid">
+        <div className="decision-detail-item">
+          <div className="decision-detail-label">Health Score at Decision</div>
+          <div className="decision-detail-val">
             {decision.health_score !== null && decision.health_score !== undefined
               ? `${formatMetric(decision.health_score, 1)} (${decision.health_status})`
               : 'N/A'}
           </div>
         </div>
-        <div>
-          <div className="decision-detail-label text-slate-400 mb-1">Confidence Score</div>
-          <div className="decision-detail-val font-semibold font-mono text-slate-100">
+        <div className="decision-detail-item">
+          <div className="decision-detail-label">Confidence Score</div>
+          <div className="decision-detail-val">
             {decision.confidence !== null && decision.confidence !== undefined
               ? `${(decision.confidence * 100).toFixed(1)}%`
               : 'N/A'}
           </div>
         </div>
-        <div>
-          <div className="decision-detail-label text-slate-400 mb-1">Requires Human Approval</div>
+        <div className="decision-detail-item">
+          <div className="decision-detail-label">Requires Human Approval</div>
           <div
             className={cn(
-              'decision-detail-val font-semibold',
-              decision.requires_human_approval ? 'text-amber-400' : 'text-emerald-400'
+              'decision-detail-val',
+              decision.requires_human_approval ? 'text-warning' : 'text-healthy'
             )}
           >
             {decision.requires_human_approval ? 'YES (Mandatory)' : 'NO'}
           </div>
         </div>
-        <div>
-          <div className="decision-detail-label text-slate-400 mb-1">Approval Status</div>
+        <div className="decision-detail-item">
+          <div className="decision-detail-label">Approval Status</div>
           <div className="decision-detail-val">
             <StatusBadge variant={getApprovalClass(decision.approval_status)} size="sm">
               {decision.approval_status}
@@ -120,33 +114,35 @@ export function DecisionReviewBox({
 
       {/* Action Controls */}
       {isPending && (
-        <div className="approval-actions flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+        <div className="approval-actions">
           {isViewer && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 mr-auto">
-              <Lock className="w-3.5 h-3.5 text-slate-400" />
+            <div className="approval-viewer-notice">
+              <Lock className="icon-sm" />
               <span>Viewers have read-only access. ML_ENGINEER or ADMIN required to approve/reject.</span>
             </div>
           )}
 
           <button
             type="button"
-            className="btn btn-danger inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white transition-colors disabled:opacity-50 focus:ring-2 focus:ring-rose-500/50"
+            className="btn btn-danger"
             onClick={handleOpenReject}
             disabled={isViewer || isLoading}
             title={isViewer ? 'Viewers cannot reject recommendations' : 'Reject this recommendation'}
+            aria-label="Reject recommendation"
           >
-            <XCircle className="w-4 h-4" />
+            <XCircle className="icon-sm" />
             <span>{isLoading ? 'Processing...' : '✕ Reject Recommendation'}</span>
           </button>
 
           <button
             type="button"
-            className="btn btn-success inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600/90 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50 focus:ring-2 focus:ring-emerald-500/50"
+            className="btn btn-success"
             onClick={handleOpenApprove}
             disabled={isViewer || isLoading}
             title={isViewer ? 'Viewers cannot approve recommendations' : 'Approve this recommendation'}
+            aria-label="Approve recommendation"
           >
-            <CheckCircle className="w-4 h-4" />
+            <CheckCircle className="icon-sm" />
             <span>{isLoading ? 'Processing...' : '✓ Approve Recommendation'}</span>
           </button>
         </div>
