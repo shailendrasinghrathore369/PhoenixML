@@ -1,6 +1,7 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { api } from '../lib/api.js';
 import { StatusBadge } from '../components/StatusBadge.jsx';
 import { HealthIndicator } from '../components/HealthIndicator.jsx';
 import { MetricCard } from '../components/MetricCard.jsx';
@@ -23,6 +24,7 @@ import { TelemetryPage } from '../pages/TelemetryPage.jsx';
 import { AuditTrailPage } from '../pages/AuditTrailPage.jsx';
 import { useNavigation, parseViewFromHash, VALID_VIEWS } from '../hooks/useNavigation.js';
 import { ThemeProvider } from '../context/ThemeContext.jsx';
+import { PredictionPlayground, PLAYGROUND_PRESETS, formatInferenceError } from '../components/PredictionPlayground.jsx';
 
 describe('StatusBadge', () => {
   it('renders healthy status variant', () => {
@@ -491,35 +493,282 @@ describe('useNavigation & Hash Routing', () => {
 });
 
 describe('ModelRegistryPage', () => {
-  it('renders model counts, access role, and roadmap empty state', () => {
-    const handleNavigate = vi.fn();
-    const dashboardData = {
-      models_summary: {
-        total_models: 4,
-        active_models: 2,
-        development_models: 1,
-        archived_models: 1,
-      },
-    };
+  const mockModels = [
+    {
+      id: 'm-1',
+      name: 'SpamSMS-LogisticRegression',
+      framework: 'scikit-learn',
+      algorithm: 'LogisticRegression',
+      status: 'ACTIVE',
+      owner_id: 'engineer-1',
+      description: 'Production reference model',
+      created_at: '2026-11-09T10:00:00Z',
+    },
+    {
+      id: 'm-2',
+      name: 'Candidate-NaiveBayes',
+      framework: 'scikit-learn',
+      algorithm: 'MultinomialNB',
+      status: 'DEVELOPMENT',
+      owner_id: 'engineer-2',
+      description: 'Candidate model in development',
+      created_at: '2026-11-09T11:00:00Z',
+    },
+  ];
 
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(api, 'listModels').mockResolvedValue(mockModels);
+  });
+
+  it('renders model counts, header, and inventory table with real records', async () => {
     render(
       <ThemeProvider>
         <ModelRegistryPage
-          user={{ role: 'ML_ENGINEER' }}
-          dashboardData={dashboardData}
-          onNavigate={handleNavigate}
+          user={{ id: 'engineer-1', role: 'ADMIN' }}
+          dashboardData={{ models_summary: { total_models: 2, active_models: 1, development_models: 1, archived_models: 0 } }}
         />
       </ThemeProvider>
     );
 
     expect(screen.getByText('Model Registry & Governance')).toBeInTheDocument();
-    expect(screen.getByText('4')).toBeInTheDocument();
-    expect(screen.getByText('2 Active')).toBeInTheDocument();
-    expect(screen.getByText('Model Registry Console Coming in Milestone 2')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('SpamSMS-LogisticRegression')).toBeInTheDocument();
+      expect(screen.getByText('Candidate-NaiveBayes')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Total Registered Models')).toBeInTheDocument();
+  });
 
-    const navBtn = screen.getByRole('button', { name: /view active models in fleet overview/i });
-    fireEvent.click(navBtn);
-    expect(handleNavigate).toHaveBeenCalledWith('dashboard');
+  it('filters models by search query and status filter', async () => {
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'engineer-1', role: 'ADMIN' }}
+        />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('SpamSMS-LogisticRegression')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/search models by name/i);
+    fireEvent.change(searchInput, { target: { value: 'NaiveBayes' } });
+
+    expect(screen.queryByText('SpamSMS-LogisticRegression')).not.toBeInTheDocument();
+    expect(screen.getByText('Candidate-NaiveBayes')).toBeInTheDocument();
+  });
+
+  it('enforces RBAC visibility: ADMIN sees full actions on all models', async () => {
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'admin-1', role: 'ADMIN' }}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByRole('button', { name: /register model/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Edit SpamSMS-LogisticRegression')).toBeInTheDocument();
+      expect(screen.getByLabelText('Edit Candidate-NaiveBayes')).toBeInTheDocument();
+      expect(screen.getByLabelText('Delete SpamSMS-LogisticRegression')).toBeInTheDocument();
+      expect(screen.getByLabelText('Delete Candidate-NaiveBayes')).toBeInTheDocument();
+    });
+  });
+
+  it('enforces RBAC visibility: ML_ENGINEER only sees Edit/Delete on owned models', async () => {
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'engineer-1', role: 'ML_ENGINEER' }}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByRole('button', { name: /register model/i })).toBeInTheDocument();
+    await waitFor(() => {
+      // engineer-1 owns m-1
+      expect(screen.getByLabelText('Edit SpamSMS-LogisticRegression')).toBeInTheDocument();
+      expect(screen.getByLabelText('Delete SpamSMS-LogisticRegression')).toBeInTheDocument();
+      // m-2 is owned by engineer-2
+      expect(screen.queryByLabelText('Edit Candidate-NaiveBayes')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Delete Candidate-NaiveBayes')).not.toBeInTheDocument();
+    });
+  });
+
+  it('enforces RBAC visibility: VIEWER has read-only access with no mutation buttons', async () => {
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'viewer-1', role: 'VIEWER' }}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('Viewer (Read-Only)')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /register model/i })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByLabelText(/edit /i)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/delete /i)).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Test SpamSMS-LogisticRegression in Playground')).toBeInTheDocument();
+    });
+  });
+
+  it('opens registration modal, validates required fields, and submits createModel', async () => {
+    const createSpy = vi.spyOn(api, 'createModel').mockResolvedValue({
+      id: 'm-new',
+      name: 'BERT-Spam',
+      framework: 'PyTorch',
+      algorithm: null,
+      description: null,
+      status: 'DEVELOPMENT',
+    });
+    const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() };
+
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'admin-1', role: 'ADMIN' }}
+          toast={mockToast}
+        />
+      </ThemeProvider>
+    );
+
+    const openBtn = screen.getByRole('button', { name: /register model/i });
+    fireEvent.click(openBtn);
+
+    expect(screen.getByText('Register New Spam Model')).toBeInTheDocument();
+
+    const dialog = screen.getByRole('dialog');
+    // Fill form
+    const nameInput = within(dialog).getByLabelText(/model name \*/i);
+    const frameworkInput = within(dialog).getByLabelText(/framework \*/i);
+    fireEvent.change(nameInput, { target: { value: 'BERT-Spam' } });
+    fireEvent.change(frameworkInput, { target: { value: 'PyTorch' } });
+
+    const submitBtn = within(dialog).getByRole('button', { name: 'Register Model' });
+    fireEvent.submit(dialog.querySelector('form'));
+
+    await waitFor(() => {
+      expect(createSpy).toHaveBeenCalledWith({
+        name: 'BERT-Spam',
+        framework: 'PyTorch',
+        algorithm: null,
+        description: null,
+        status: 'DEVELOPMENT',
+      });
+      expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('BERT-Spam'));
+    });
+  });
+
+  it('opens edit modal prefilled with model data and submits updateModel', async () => {
+    const updateSpy = vi.spyOn(api, 'updateModel').mockResolvedValue({
+      ...mockModels[0],
+      status: 'ARCHIVED',
+    });
+    const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() };
+
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'admin-1', role: 'ADMIN' }}
+          toast={mockToast}
+        />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Edit SpamSMS-LogisticRegression')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByLabelText('Edit SpamSMS-LogisticRegression'));
+    expect(screen.getByText('Edit Model: SpamSMS-LogisticRegression')).toBeInTheDocument();
+
+    const dialog = screen.getByRole('dialog');
+    const statusSelect = within(dialog).getByLabelText(/lifecycle status/i);
+    fireEvent.change(statusSelect, { target: { value: 'ARCHIVED' } });
+
+    fireEvent.submit(dialog.querySelector('form'));
+
+    await waitFor(() => {
+      expect(updateSpy).toHaveBeenCalledWith('m-1', expect.objectContaining({ status: 'ARCHIVED' }));
+      expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('SpamSMS-LogisticRegression'));
+    });
+  });
+
+  it('opens confirmation dialog on delete and confirms deletion', async () => {
+    const deleteSpy = vi.spyOn(api, 'deleteModel').mockResolvedValue(null);
+    const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() };
+
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'admin-1', role: 'ADMIN' }}
+          toast={mockToast}
+        />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Delete SpamSMS-LogisticRegression')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByLabelText('Delete SpamSMS-LogisticRegression'));
+    expect(screen.getByText('Delete Registered Model')).toBeInTheDocument();
+
+    const dialog = screen.getByRole('dialog');
+    const confirmBtn = within(dialog).getByRole('button', { name: 'Delete Model' });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(deleteSpy).toHaveBeenCalledWith('m-1');
+      expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('SpamSMS-LogisticRegression'));
+    });
+  });
+
+  it('navigates to playground sub-tab when "Playground" action is clicked', async () => {
+    const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() };
+
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'viewer-1', role: 'VIEWER' }}
+          toast={mockToast}
+        />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Test SpamSMS-LogisticRegression in Playground')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByLabelText('Test SpamSMS-LogisticRegression in Playground'));
+
+    expect(screen.getByText('Target Testing Model')).toBeInTheDocument();
+    expect(screen.getByText('Prediction Playground Console')).toBeInTheDocument();
+
+    // Clicking back to inventory returns to inventory sub-tab
+    const backBtn = screen.getByRole('button', { name: /back to inventory/i });
+    fireEvent.click(backBtn);
+    expect(screen.getByRole('table')).toBeInTheDocument();
+  });
+
+  it('displays loading state and error alert with retry button', async () => {
+    vi.spyOn(api, 'listModels').mockRejectedValueOnce(new Error('Network error'));
+
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'admin-1', role: 'ADMIN' }}
+        />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Network error')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    });
   });
 });
 
@@ -654,5 +903,311 @@ describe('AuditTrailPage', () => {
     expect(screen.getByText('ProductionSpamDetector')).toBeInTheDocument();
     expect(screen.getByText('MAINTAIN_CURRENT_STATE')).toBeInTheDocument();
     expect(screen.getByText('Audit Trail Enhancements (Milestone 4)')).toBeInTheDocument();
+  });
+});
+
+describe('PredictionPlayground & Interactive Inference', () => {
+  const sampleModels = [
+    {
+      id: 'm-prod',
+      name: 'SpamSMS-DistilBERT',
+      framework: 'PyTorch',
+      algorithm: 'DistilBERT',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'm-second',
+      name: 'SpamSMS-LogisticRegression',
+      framework: 'scikit-learn',
+      algorithm: 'LogisticRegression',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'm-dev',
+      name: 'Candidate-NaiveBayes',
+      framework: 'scikit-learn',
+      algorithm: 'MultinomialNB',
+      status: 'DEVELOPMENT',
+    },
+  ];
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('selects the first ACTIVE model by default when no selectedModelId is provided', () => {
+    render(
+      <ThemeProvider>
+        <PredictionPlayground models={sampleModels} />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('Target Testing Model')).toBeInTheDocument();
+    expect(screen.getByText('SpamSMS-DistilBERT')).toBeInTheDocument();
+  });
+
+  it('respects a preselected model ID from inventory navigation', () => {
+    render(
+      <ThemeProvider>
+        <PredictionPlayground models={sampleModels} selectedModelId="m-second" />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('SpamSMS-LogisticRegression')).toBeInTheDocument();
+  });
+
+  it('switches target model using the model dropdown selector', () => {
+    const handleSelect = vi.fn();
+    render(
+      <ThemeProvider>
+        <PredictionPlayground
+          models={sampleModels}
+          selectedModelId="m-prod"
+          onSelectModelId={handleSelect}
+        />
+      </ThemeProvider>
+    );
+
+    const select = screen.getByLabelText(/select model for prediction playground/i);
+    fireEvent.change(select, { target: { value: 'm-second' } });
+    expect(handleSelect).toHaveBeenCalledWith('m-second');
+  });
+
+  it('renders EmptyState when no ACTIVE models are available in the registry', () => {
+    const handleBack = vi.fn();
+    const inactiveOnly = [
+      { id: 'm-dev', name: 'DevModel', framework: 'sklearn', status: 'DEVELOPMENT' },
+    ];
+
+    render(
+      <ThemeProvider>
+        <PredictionPlayground
+          models={inactiveOnly}
+          onNavigateToInventory={handleBack}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('No Active Models Available')).toBeInTheDocument();
+    expect(screen.getByText(/requires at least one ACTIVE spam detection model/i)).toBeInTheDocument();
+
+    const returnBtn = screen.getByRole('button', { name: /return to model inventory/i });
+    fireEvent.click(returnBtn);
+    expect(handleBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('validates non-empty input for Single SMS prediction', async () => {
+    const predictSpy = vi.spyOn(api, 'predict');
+
+    render(
+      <ThemeProvider>
+        <PredictionPlayground models={sampleModels} />
+      </ThemeProvider>
+    );
+
+    const submitBtn = screen.getByRole('button', { name: /classify sms/i });
+    expect(submitBtn).toBeDisabled();
+
+    // Type spaces
+    const textarea = screen.getByLabelText(/sms text message/i);
+    fireEvent.change(textarea, { target: { value: '   ' } });
+    expect(submitBtn).toBeDisabled();
+
+    // Trigger form submission directly
+    fireEvent.submit(textarea.closest('form'));
+    expect(screen.getByText('SMS message text cannot be empty.')).toBeInTheDocument();
+    expect(predictSpy).not.toHaveBeenCalled();
+  });
+
+  it('executes Single SMS prediction and renders label, confidence, and class probabilities', async () => {
+    const mockPrediction = {
+      model_id: 'm-prod',
+      model_name: 'SpamSMS-DistilBERT',
+      model_version: 'v1.0.0',
+      total_predictions: 1,
+      spam_count: 1,
+      ham_count: 0,
+      predictions: [
+        {
+          text: 'URGENT: Click http://scam.xyz to claim $1000 now!',
+          predicted_label: 'spam',
+          label_id: 1,
+          is_spam: true,
+          spam_probability: 0.985,
+          ham_probability: 0.015,
+          confidence: 0.985,
+          model_name: 'SpamSMS-DistilBERT',
+          model_version: 'v1.0.0',
+        },
+      ],
+    };
+    const predictSpy = vi.spyOn(api, 'predict').mockResolvedValue(mockPrediction);
+    const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+
+    render(
+      <ThemeProvider>
+        <PredictionPlayground models={sampleModels} toast={mockToast} />
+      </ThemeProvider>
+    );
+
+    const textarea = screen.getByLabelText(/sms text message/i);
+    fireEvent.change(textarea, { target: { value: 'URGENT: Click http://scam.xyz to claim $1000 now!' } });
+
+    const submitBtn = screen.getByRole('button', { name: /classify sms/i });
+    expect(submitBtn).not.toBeDisabled();
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(predictSpy).toHaveBeenCalledWith('m-prod', {
+        text: 'URGENT: Click http://scam.xyz to claim $1000 now!',
+      });
+    });
+
+    // Check predicted label badge
+    expect(screen.getAllByText('SPAM').length).toBeGreaterThan(0);
+    // Check confidence score
+    expect(screen.getAllByText('98.5%').length).toBeGreaterThan(0);
+    // Check accessible progressbar for confidence meter
+    const confidenceMeter = screen.getByRole('progressbar', { name: /model confidence meter/i });
+    expect(confidenceMeter).toHaveAttribute('aria-valuenow', '99');
+    // Check probability values
+    expect(screen.getByText('98.50%')).toBeInTheDocument();
+    expect(screen.getByText('1.50%')).toBeInTheDocument();
+    // Check advisory disclaimer
+    expect(screen.getByText(/statistical notice: predictions represent machine learning probabilistic estimates/i)).toBeInTheDocument();
+    expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('Classified as SPAM'));
+  });
+
+  it('populates preset examples without automatically submitting inference', () => {
+    const predictSpy = vi.spyOn(api, 'predict');
+
+    render(
+      <ThemeProvider>
+        <PredictionPlayground models={sampleModels} />
+      </ThemeProvider>
+    );
+
+    const textarea = screen.getByLabelText(/sms text message/i);
+    expect(textarea.value).toBe('');
+
+    // Click "Spam phishing message" preset
+    const phishingBtn = screen.getByRole('button', { name: /spam phishing message/i });
+    fireEvent.click(phishingBtn);
+
+    expect(textarea.value).toContain('URGENT! Your online bank access');
+    expect(predictSpy).not.toHaveBeenCalled();
+
+    // Click "Typical ham conversation" preset
+    const hamBtn = screen.getByRole('button', { name: /typical ham conversation/i });
+    fireEvent.click(hamBtn);
+
+    expect(textarea.value).toContain('Hey Sam, are we still meeting');
+    expect(predictSpy).not.toHaveBeenCalled();
+  });
+
+  it('executes Batch SMS prediction, handles empty lines, and renders aggregate summary and table', async () => {
+    const mockBatchResponse = {
+      model_id: 'm-prod',
+      model_name: 'SpamSMS-DistilBERT',
+      model_version: 'v1.0.0',
+      total_predictions: 2,
+      spam_count: 1,
+      ham_count: 1,
+      predictions: [
+        {
+          text: 'Free tickets to Paris!',
+          predicted_label: 'spam',
+          label_id: 1,
+          is_spam: true,
+          spam_probability: 0.942,
+          ham_probability: 0.058,
+          confidence: 0.942,
+        },
+        {
+          text: 'Can you pick up groceries on the way?',
+          predicted_label: 'ham',
+          label_id: 0,
+          is_spam: false,
+          spam_probability: 0.031,
+          ham_probability: 0.969,
+          confidence: 0.969,
+        },
+      ],
+    };
+    const predictSpy = vi.spyOn(api, 'predict').mockResolvedValue(mockBatchResponse);
+    const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+
+    render(
+      <ThemeProvider>
+        <PredictionPlayground models={sampleModels} toast={mockToast} />
+      </ThemeProvider>
+    );
+
+    // Switch to Batch mode
+    const batchTab = screen.getByRole('tab', { name: /batch sms/i });
+    fireEvent.click(batchTab);
+
+    const batchInput = screen.getByLabelText(/batch sms text messages/i);
+    // Enter 2 messages with blank lines
+    fireEvent.change(batchInput, {
+      target: {
+        value: 'Free tickets to Paris!\n\n   \nCan you pick up groceries on the way?\n',
+      },
+    });
+
+    const submitBtn = screen.getByRole('button', { name: /classify batch/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      // Empty lines must be filtered out
+      expect(predictSpy).toHaveBeenCalledWith('m-prod', {
+        texts: ['Free tickets to Paris!', 'Can you pick up groceries on the way?'],
+      });
+    });
+
+    // Check batch summary KPIs
+    expect(screen.getByText('Total Predictions')).toBeInTheDocument();
+    expect(screen.getAllByText('2').length).toBeGreaterThan(0);
+    expect(screen.getByText('Spam Detected')).toBeInTheDocument();
+    expect(screen.getByText('Ham Verified')).toBeInTheDocument();
+
+    // Check table rows
+    expect(screen.getByText('Free tickets to Paris!')).toBeInTheDocument();
+    expect(screen.getByText('Can you pick up groceries on the way?')).toBeInTheDocument();
+    expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('Batch classified: 2 messages'));
+  });
+
+  it('handles API errors gracefully, disables inputs during loading, and preserves previous results', async () => {
+    const error403 = new Error('Forbidden');
+    error403.status = 403;
+    const predictSpy = vi.spyOn(api, 'predict').mockRejectedValue(error403);
+    const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+
+    render(
+      <ThemeProvider>
+        <PredictionPlayground models={sampleModels} toast={mockToast} />
+      </ThemeProvider>
+    );
+
+    const textarea = screen.getByLabelText(/sms text message/i);
+    fireEvent.change(textarea, { target: { value: 'Suspicious payload message' } });
+
+    const submitBtn = screen.getByRole('button', { name: /classify sms/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByText(/forbidden \(403\): you do not have permission/i)).toBeInTheDocument();
+      expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('Forbidden (403)'));
+    });
+  });
+
+  it('formatInferenceError formats 401, 403, 404, 422, and network errors correctly', () => {
+    expect(formatInferenceError({ status: 401 })).toContain('Authentication session expired');
+    expect(formatInferenceError({ status: 403 })).toContain('Forbidden (403)');
+    expect(formatInferenceError({ status: 404 })).toContain('Model not found (404)');
+    expect(formatInferenceError({ status: 422 })).toContain('Validation error (422)');
+    expect(formatInferenceError({ name: 'TypeError', message: 'Failed to fetch' })).toContain('Network error');
+    expect(formatInferenceError(null)).toContain('Inference request failed');
   });
 });

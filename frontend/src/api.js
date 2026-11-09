@@ -91,6 +91,11 @@ async function apiRequest(endpoint, options = {}) {
     }
   }
 
+  // Handle 204 No Content (e.g. DELETE) without attempting JSON body parsing
+  if (response.status === 204) {
+    return null;
+  }
+
   let data = null;
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
@@ -213,6 +218,84 @@ export const api = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ approval_status: approvalStatus }),
+    });
+  },
+
+  /**
+   * List registered spam models with optional pagination.
+   */
+  listModels: async (params = { skip: 0, limit: 100 }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.skip !== undefined && params?.skip !== null) {
+      searchParams.append('skip', String(params.skip));
+    }
+    if (params?.limit !== undefined && params?.limit !== null) {
+      searchParams.append('limit', String(params.limit));
+    }
+    const query = searchParams.toString();
+    return apiRequest(`/spam-models${query ? `?${query}` : ''}`);
+  },
+
+  /**
+   * Retrieve a single registered model by its UUID.
+   */
+  getModel: async (modelId) => {
+    return apiRequest(`/spam-models/${encodeURIComponent(modelId)}`);
+  },
+
+  /**
+   * Create and register a new spam model.
+   */
+  createModel: async (payload) => {
+    return apiRequest('/spam-models', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Update an existing registered model's metadata or status.
+   */
+  updateModel: async (modelId, payload) => {
+    return apiRequest(`/spam-models/${encodeURIComponent(modelId)}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Delete a registered model by its UUID.
+   * Correctly handles 204 No Content without attempting JSON parsing.
+   */
+  deleteModel: async (modelId) => {
+    return apiRequest(`/spam-models/${encodeURIComponent(modelId)}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Execute real-time deterministic spam/ham prediction on single or batch SMS messages.
+   * Supports payload: { text: "..." } or { texts: ["...", "..."] }, as well as string / array inputs.
+   */
+  predict: async (modelId, payload) => {
+    let bodyObj = payload;
+    if (typeof payload === 'string') {
+      bodyObj = { text: payload };
+    } else if (Array.isArray(payload)) {
+      bodyObj = { texts: payload };
+    }
+    return apiRequest(`/spam-models/${encodeURIComponent(modelId)}/predict`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bodyObj),
     });
   },
 

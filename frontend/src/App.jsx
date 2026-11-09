@@ -60,6 +60,8 @@ function AppContent() {
             dashboardData={dashboard.dashboardData}
             loading={dashboard.loading}
             onNavigate={nav.navigateTo}
+            onRefresh={() => dashboard.loadDashboard(dashboard.selectedModelId)}
+            toast={toast}
           />
         );
       case 'approvals':
