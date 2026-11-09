@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AppSidebar } from '../components/AppSidebar.jsx';
 import { AppHeader } from '../components/AppHeader.jsx';
 import { ToastContainer } from '../components/Toast.jsx';
@@ -13,10 +13,10 @@ export function DashboardLayout({
   totalModels = 0,
   toasts = [],
   onDismissToast,
+  currentView = 'dashboard',
+  onSelectView,
   children,
 }) {
-  const [currentView, setCurrentView] = useState('dashboard');
-
   return (
     <div className="app-shell">
       {/* Top Application Bar */}
@@ -31,7 +31,7 @@ export function DashboardLayout({
       <div className="app-body">
         <AppSidebar
           currentView={currentView}
-          onSelectView={setCurrentView}
+          onSelectView={onSelectView}
           pendingCount={pendingCount}
           systemStatus={systemStatus}
           totalModels={totalModels}

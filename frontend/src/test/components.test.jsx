@@ -17,6 +17,11 @@ import { RecentDecisionsTable } from '../components/RecentDecisionsTable.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { SignupPage } from '../pages/SignupPage.jsx';
 import { DashboardPage } from '../pages/DashboardPage.jsx';
+import { ModelRegistryPage } from '../pages/ModelRegistryPage.jsx';
+import { ApprovalsPage } from '../pages/ApprovalsPage.jsx';
+import { TelemetryPage } from '../pages/TelemetryPage.jsx';
+import { AuditTrailPage } from '../pages/AuditTrailPage.jsx';
+import { useNavigation, parseViewFromHash, VALID_VIEWS } from '../hooks/useNavigation.js';
 import { ThemeProvider } from '../context/ThemeContext.jsx';
 
 describe('StatusBadge', () => {
@@ -462,5 +467,192 @@ describe('DashboardPage', () => {
     const select = screen.getByLabelText(/filter by registered model/i);
     fireEvent.change(select, { target: { value: 'm1' } });
     expect(setSelectedModelId).toHaveBeenCalledWith('m1');
+  });
+});
+
+describe('useNavigation & Hash Routing', () => {
+  it('parses valid view from hash or defaults to dashboard', () => {
+    window.location.hash = '#/models';
+    expect(parseViewFromHash()).toBe('models');
+
+    window.location.hash = '#/telemetry';
+    expect(parseViewFromHash()).toBe('telemetry');
+
+    window.location.hash = '#/invalid_view';
+    expect(parseViewFromHash()).toBe('dashboard');
+
+    window.location.hash = '';
+    expect(parseViewFromHash()).toBe('dashboard');
+  });
+
+  it('provides all 5 valid views', () => {
+    expect(VALID_VIEWS).toEqual(['dashboard', 'models', 'approvals', 'telemetry', 'audit']);
+  });
+});
+
+describe('ModelRegistryPage', () => {
+  it('renders model counts, access role, and roadmap empty state', () => {
+    const handleNavigate = vi.fn();
+    const dashboardData = {
+      models_summary: {
+        total_models: 4,
+        active_models: 2,
+        development_models: 1,
+        archived_models: 1,
+      },
+    };
+
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ role: 'ML_ENGINEER' }}
+          dashboardData={dashboardData}
+          onNavigate={handleNavigate}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('Model Registry & Governance')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('2 Active')).toBeInTheDocument();
+    expect(screen.getByText('Model Registry Console Coming in Milestone 2')).toBeInTheDocument();
+
+    const navBtn = screen.getByRole('button', { name: /view active models in fleet overview/i });
+    fireEvent.click(navBtn);
+    expect(handleNavigate).toHaveBeenCalledWith('dashboard');
+  });
+});
+
+describe('ApprovalsPage', () => {
+  it('renders decision review box when pending decision exists', () => {
+    const handleApprove = vi.fn();
+    const handleReject = vi.fn();
+    const pendingDecision = {
+      id: 99,
+      model_id: 'm1',
+      recommended_action: 'RECALIBRATE_THRESHOLDS',
+      priority: 'HIGH',
+      approval_status: 'PENDING',
+      rationale: 'Confidence dropped under high noise input.',
+      requires_human_approval: true,
+      health_score: 55,
+      confidence: 0.85,
+    };
+
+    render(
+      <ThemeProvider>
+        <ApprovalsPage
+          user={{ role: 'ADMIN' }}
+          dashboardData={{
+            decision_summary: { pending_approvals_count: 1, total_decisions: 5 },
+          }}
+          pendingDecision={pendingDecision}
+          modelMap={{ m1: { name: 'SpamModel' } }}
+          handleApprove={handleApprove}
+          handleReject={handleReject}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('Human-in-the-Loop Approval Queue')).toBeInTheDocument();
+    expect(screen.getByText('1 Action Required')).toBeInTheDocument();
+    expect(screen.getByText('RECALIBRATE_THRESHOLDS')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /approve recommendation/i })).toBeInTheDocument();
+  });
+
+  it('renders clear queue empty state when no pending decisions exist', () => {
+    const handleNavigate = vi.fn();
+    render(
+      <ThemeProvider>
+        <ApprovalsPage
+          user={{ role: 'ADMIN' }}
+          dashboardData={{
+            decision_summary: { pending_approvals_count: 0, total_decisions: 5 },
+          }}
+          pendingDecision={null}
+          onNavigate={handleNavigate}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('Approval Queue is Clear')).toBeInTheDocument();
+    const returnBtn = screen.getByRole('button', { name: /return to fleet operations/i });
+    fireEvent.click(returnBtn);
+    expect(handleNavigate).toHaveBeenCalledWith('dashboard');
+  });
+});
+
+describe('TelemetryPage', () => {
+  it('renders observation counts, F1 benchmark, and roadmap state', () => {
+    const handleNavigate = vi.fn();
+    const dashboardData = {
+      monitoring_summary: {
+        total_observations: 250,
+        latest_f1: 0.934,
+        latest_accuracy: 0.951,
+        latest_observation_at: '2026-11-08T12:00:00Z',
+      },
+    };
+
+    render(
+      <ThemeProvider>
+        <TelemetryPage
+          user={{ role: 'ADMIN' }}
+          dashboardData={dashboardData}
+          onNavigate={handleNavigate}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('Model Telemetry & Performance Trends')).toBeInTheDocument();
+    expect(screen.getByText('250')).toBeInTheDocument();
+    expect(screen.getByText('0.9340')).toBeInTheDocument();
+    expect(screen.getByText('95.1%')).toBeInTheDocument();
+    expect(screen.getByText('Telemetry Explorer Coming in Milestone 3')).toBeInTheDocument();
+
+    const evalBtn = screen.getByRole('button', { name: /run model evaluations in fleet overview/i });
+    fireEvent.click(evalBtn);
+    expect(handleNavigate).toHaveBeenCalledWith('dashboard');
+  });
+});
+
+describe('AuditTrailPage', () => {
+  it('renders total decisions count and recent decisions table', () => {
+    const dashboardData = {
+      decision_summary: {
+        total_decisions: 12,
+        approved_count: 8,
+        rejected_count: 2,
+        pending_approvals_count: 2,
+        recent_decisions: [
+          {
+            id: 1,
+            created_at: '2026-11-08T12:00:00Z',
+            model_id: 'm1',
+            recommended_action: 'MAINTAIN_CURRENT_STATE',
+            priority: 'LOW',
+            health_score: 95.0,
+            confidence: 0.98,
+            approval_status: 'APPROVED',
+          },
+        ],
+      },
+    };
+
+    render(
+      <ThemeProvider>
+        <AuditTrailPage
+          user={{ role: 'ADMIN' }}
+          dashboardData={dashboardData}
+          modelMap={{ m1: { name: 'ProductionSpamDetector' } }}
+        />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('Decision Audit Trail & Governance Log')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('ProductionSpamDetector')).toBeInTheDocument();
+    expect(screen.getByText('MAINTAIN_CURRENT_STATE')).toBeInTheDocument();
+    expect(screen.getByText('Audit Trail Enhancements (Milestone 4)')).toBeInTheDocument();
   });
 });

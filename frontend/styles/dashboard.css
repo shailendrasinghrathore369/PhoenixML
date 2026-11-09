@@ -2717,6 +2717,66 @@ svg.lucide {
   }
 }
 
+/* ==========================================================================
+   Phase 3B / Milestone 1: Multi-View & Roadmap Card Components
+   ========================================================================== */
+
+.roadmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.roadmap-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.roadmap-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.roadmap-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.5rem;
+}
+
+.roadmap-card-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.roadmap-card-desc {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+  flex: 1;
+}
+
+.roadmap-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  color: var(--color-primary);
+  background-color: var(--primary-bg-subtle);
+  border: 1px solid var(--primary-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
+}
+
 /* Responsive Overrides & Viewport Constraints */
 @media (max-width: 767px) {
   .toast-container {
