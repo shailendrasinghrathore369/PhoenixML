@@ -1,0 +1,29 @@
+{
+  "name": "phoenixml-frontend",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "PhoenixML Operator-Facing Dashboard Single Page Application",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "start": "npx serve . -l 3000"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.2.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.70.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^3.7.0",
+    "vite": "^8.3.6"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "jsdom": "^29.1.1",
+    "vitest": "^5.1.0"
+  }
+}

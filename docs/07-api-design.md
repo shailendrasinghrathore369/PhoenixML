@@ -1,389 +1,794 @@
-# API Design
+# API Design Document
 
-**Project:** PhoenixML
+**Project:** PhoenixML – An Intelligent MLOps Decision Support Framework for Spam Email Detection
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Prepared By:** Shailendra Singh Rathore
+
+**Document Type:** API Design Document (ADD)
+
+---
+
+# Revision History
+
+| Version | Date | Author | Description |
+|---------|------|--------|-------------|
+| 1.0 | XX/XX/2026 | Shailendra Singh Rathore | Initial API Design Document |
+| 2.0 | XX/XX/2026 | Shailendra Singh Rathore | Updated API design aligned with PhoenixML v2.0 |
+
+---
+
+# Table of Contents
+
+1. Introduction
+2. API Design Objectives
+3. API Architecture
+4. API Standards
+5. API Modules
 
 ---
 
 # 1. Introduction
 
-This document defines the REST API specification for PhoenixML. The APIs enable communication between the React frontend, the FastAPI backend, the AIMD decision engine, and the PostgreSQL database.
+## 1.1 Purpose
 
-The API follows REST principles and exchanges data in JSON format.
+This API Design Document describes the RESTful APIs used by **PhoenixML – An Intelligent MLOps Decision Support Framework for Spam Email Detection**. It defines how the frontend communicates with backend services, ensuring secure, standardized, and efficient data exchange.
+
+The document provides a high-level overview of API organization, endpoint groups, request processing, authentication mechanisms, and response formats.
 
 ---
 
-# 2. API Architecture
+## 1.2 Scope
+
+The API layer supports communication for all major modules of PhoenixML, including:
+
+- User Authentication
+- Spam Model Management
+- Production Monitoring
+- Drift Detection
+- Health Assessment
+- AIMD Recommendations
+- Dashboard
+- Notifications
+- Reporting
+
+Detailed backend implementation and business logic are documented separately in the Software Design Document.
+
+---
+
+# 2. API Design Objectives
+
+The API has been designed with the following objectives:
+
+### Standardization
+
+Provide consistent request and response structures across all endpoints.
+
+### Security
+
+Protect system resources using JWT-based authentication and role-based authorization.
+
+### Scalability
+
+Support future API expansion without breaking existing client applications.
+
+### Maintainability
+
+Organize endpoints into logical functional groups for easier development and maintenance.
+
+### Performance
+
+Ensure efficient communication between the frontend and backend using lightweight JSON messages.
+
+---
+
+# 3. API Architecture
+
+PhoenixML follows a client-server architecture where the React frontend communicates with the FastAPI backend through REST APIs.
 
 ```mermaid
 flowchart LR
 
-Frontend[React Frontend]
+React["React Frontend"]
 
-API[FastAPI REST API]
+API["FastAPI REST API"]
 
-Services[Business Services]
+Services["Business Services"]
 
-Database[(PostgreSQL)]
+Database["PostgreSQL"]
 
-AIMD[AIMD Engine]
-
-Frontend --> API
+React --> API
 
 API --> Services
 
 Services --> Database
 
-Services --> AIMD
+Database --> Services
+
+Services --> API
+
+API --> React
 ```
+
+The API layer acts as an intermediary between the frontend and backend services, validating requests, enforcing authentication, invoking business logic, and returning standardized responses.
 
 ---
 
-# 3. Authentication
+# 4. API Standards
 
-Authentication uses JWT.
+The PhoenixML API follows standard REST design principles.
 
-Protected endpoints require:
-
-```
-Authorization: Bearer <token>
-```
+| Standard | Description |
+|----------|-------------|
+| Protocol | HTTPS |
+| Architecture | REST |
+| Data Format | JSON |
+| Authentication | JWT |
+| Character Encoding | UTF-8 |
+| HTTP Methods | GET, POST, PUT, DELETE |
 
 ---
 
-# 4. Authentication APIs
+## HTTP Methods
 
-## Register
+| Method | Purpose |
+|---------|---------|
+| GET | Retrieve resources |
+| POST | Create new resources |
+| PUT | Update existing resources |
+| DELETE | Remove resources |
 
-POST
+---
 
-```
-/api/v1/auth/register
-```
+## Standard Response Format
 
-Request
+### Successful Response
 
 ```json
 {
-    "full_name":"John Doe",
-    "email":"john@example.com",
-    "password":"password123"
+  "success": true,
+  "message": "Request processed successfully",
+  "data": {}
 }
 ```
 
-Response
+### Error Response
 
 ```json
 {
-    "message":"User registered successfully"
+  "success": false,
+  "message": "Resource not found",
+  "error": {}
 }
 ```
 
----
-
-## Login
-
-POST
-
-```
-/api/v1/auth/login
-```
-
-Request
-
-```json
-{
-    "email":"john@example.com",
-    "password":"password123"
-}
-```
-
-Response
-
-```json
-{
-    "access_token":"jwt_token",
-    "token_type":"Bearer"
-}
-```
+The standardized response structure simplifies frontend integration and improves consistency across all API endpoints.
 
 ---
 
-## Current User
+# 5. API Modules
 
-GET
+The PhoenixML API is organized into functional groups exposed under the `/api` prefix.
 
-```
-/api/v1/auth/me
-```
+| Module | Base Endpoint | Purpose |
+|---------|---------------|---------|
+| Health Check | `/api/health` | Service liveness and operational health status |
+| Authentication | `/api/auth` | User login, registration, token refresh, and logout |
+| Users | `/api/users` | User profile retrieval and password management |
+| Spam Models | `/api/spam-models` | Model registration, inventory, and lifecycle management |
+| Monitoring | `/api/spam-models/{model_id}/monitoring` | Ingestion and retrieval of runtime monitoring metrics |
+| Decision History & AIMD | `/api/spam-models/{model_id}/decisions` | Deterministic AIMD evaluation, audit history, and human approval |
+| Dashboard | `/api/dashboard` | Fleet-wide and model-specific aggregate telemetry and health |
+| Operator Frontend | `/ui` | Interactive browser-based operator dashboard UI |
 
----
+# 6. API Endpoint Specifications
 
-# 5. Model APIs
-
-## Register Model
-
-POST
-
-```
-/api/v1/models
-```
-
----
-
-## Get All Models
-
-GET
-
-```
-/api/v1/models
-```
+This section describes the primary REST API endpoints provided by PhoenixML. The endpoints are organized into functional modules, each supporting a specific feature of the system.
 
 ---
 
-## Get Model
+# 6.1 Authentication API
 
-GET
+### Purpose
 
-```
-/api/v1/models/{id}
-```
+The Authentication API manages user registration, credential authentication, JWT token issuance, session refresh, and logout.
 
----
-
-## Update Model
-
-PUT
-
-```
-/api/v1/models/{id}
-```
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Authenticate credentials and issue JWT access & refresh tokens |
+| POST | `/api/auth/refresh` | Issue new access token using valid refresh token |
+| POST | `/api/auth/logout` | Invalidate current user session |
 
 ---
 
-## Delete Model
+# 6.2 Users API
 
-DELETE
+### Purpose
 
-```
-/api/v1/models/{id}
-```
+The Users API allows authenticated users to inspect their profile and update credentials.
 
----
-
-# 6. Monitoring APIs
-
-## Submit Metrics
-
-POST
-
-```
-/api/v1/monitoring
-```
-
-Example
-
-```json
-{
-    "model_id":"uuid",
-    "accuracy":92,
-    "confidence":88,
-    "drift_score":12,
-    "data_quality":95,
-    "latency":120
-}
-```
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/users/me` | Retrieve authenticated user profile |
+| PATCH | `/api/users/me` | Update authenticated user profile attributes |
+| POST | `/api/users/me/change-password` | Update account password |
 
 ---
 
-## Get Monitoring History
+# 6.3 Spam Models API
 
-GET
+### Purpose
 
-```
-/api/v1/monitoring/{model_id}
-```
+The Spam Models API manages registered spam email detection models monitored by PhoenixML.
 
----
-
-# 7. AIMD APIs
-
-## Evaluate Model
-
-POST
-
-```
-/api/v1/decision/evaluate
-```
-
-Request
-
-```json
-{
-    "model_id":"uuid"
-}
-```
-
-Response
-
-```json
-{
-    "health_score":84,
-    "status":"Healthy",
-    "recommended_action":"Increase Monitoring",
-    "confidence":91
-}
-```
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/spam-models` | Retrieve all registered models accessible to current user role |
+| POST | `/api/spam-models` | Register a new spam detection model (ADMIN, ML_ENGINEER) |
+| GET | `/api/spam-models/{model_id}` | Retrieve details for a specific registered model |
+| PUT | `/api/spam-models/{model_id}` | Update registered model metadata |
+| DELETE | `/api/spam-models/{model_id}` | Deregister/remove a model (cascades to telemetry and decisions) |
 
 ---
 
-## Recommendation History
+# 6.4 Monitoring API
 
-GET
+### Purpose
 
-```
-/api/v1/decision/history/{model_id}
-```
+The Monitoring API stores and retrieves runtime performance and telemetry metrics for registered spam detection models.
 
----
-
-# 8. Dashboard APIs
-
-## Dashboard Summary
-
-GET
-
-```
-/api/v1/dashboard
-```
-
-Returns
-
-- Active models
-- Average health score
-- Latest recommendations
-- Alerts
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/spam-models/{model_id}/monitoring` | Retrieve monitoring records for a model (supports pagination) |
+| POST | `/api/spam-models/{model_id}/monitoring` | Ingest a new monitoring observation record |
+| GET | `/api/spam-models/{model_id}/monitoring/{observation_id}` | Retrieve a specific monitoring observation |
+| DELETE | `/api/spam-models/{model_id}/monitoring/{observation_id}` | Remove a specific observation record |
 
 ---
 
-# 9. Report APIs
+# 6.5 Drift & Performance Analysis Pipeline
 
-## Generate Report
+### Purpose
 
-GET
+Drift detection (feature drift, prediction drift, concept drift) and longitudinal performance trend analysis are executed directly by the analytical service layer upon stored monitoring observations.
 
-```
-/api/v1/reports/{model_id}
-```
+Rather than requiring separate decoupled REST polling endpoints, drift metrics and performance degradation signals feed directly into the AIMD Decision Engine via `POST /api/spam-models/{model_id}/decisions/evaluate` and are surfaced on model cards and telemetry overviews via `GET /api/dashboard/{model_id}`.
 
 ---
 
-# 10. HTTP Status Codes
+# 6.6 Health Assessment Pipeline
 
-| Code | Meaning |
-|------|---------|
-|200|Success|
-|201|Created|
-|400|Bad Request|
-|401|Unauthorized|
-|403|Forbidden|
-|404|Not Found|
-|422|Validation Error|
-|500|Internal Server Error|
+### Purpose
+
+Composite health scoring evaluates real-time operational health (healthy, warning, critical, or insufficient data) across ingested observation vectors.
+
+Health status is calculated dynamically during AIMD recommendation evaluation (`POST /api/spam-models/{model_id}/decisions/evaluate`) and aggregated system-wide in dashboard summaries (`GET /api/dashboard`).
 
 ---
 
-# 11. Error Format
+# 6.7 Decision History & Recommendations API
 
-```json
-{
-    "success":false,
-    "message":"Validation failed",
-    "errors":[]
-}
-```
+### Purpose
+
+The Decision History & Recommendations API provides authenticated, role-based read access to AIMD decision recommendations and audit logs for deployed spam detection models. It exposes paginated decision history and individual decision inspection for dashboard consumption and auditing.
+
+### Authorization & Access Control (RBAC)
+
+- **Allowed Roles:** `ADMIN`, `ML_ENGINEER`, `VIEWER` (for read operations); `ADMIN`, `ML_ENGINEER` (for approval and evaluation operations).
+- **Model Ownership:** Non-admin users (`ML_ENGINEER`, `VIEWER`) can only query decision history for models they own. Attempts to access or modify decisions of models owned by others return `403 Forbidden`.
+- **Evaluation & Approval Permissions:** Only `ADMIN` and `ML_ENGINEER` (who own the target model) may update approval status or trigger model evaluations. Users with role `VIEWER` receive `403 Forbidden`.
+- **Admin Privilege:** Users with role `ADMIN` have global read and execution permissions across all registered models.
+- **Isolation & Integrity:** Requests specifying an invalid or nonexistent model or decision ID return `404 Not Found`. Cross-model access (querying a decision with an mismatched model ID) returns `404 Not Found`.
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/spam-models/{model_id}/decisions` | Retrieve paginated decision history for a model (newest first) |
+| GET | `/spam-models/{model_id}/decisions/{decision_id}` | Retrieve a specific decision log record for a model |
+| PATCH | `/spam-models/{model_id}/decisions/{decision_id}/approval` | Update human approval status of a decision (PENDING to APPROVED or REJECTED) |
+| POST | `/spam-models/{model_id}/decisions/evaluate` | Trigger AIMD evaluation across monitoring observations, persisting recommendation |
+
+### Endpoints Specification
+
+#### 1. List Model Decision History
+- **Path:** `GET /api/spam-models/{model_id}/decisions`
+- **Query Parameters:**
+  - `skip` (`integer`, optional, default: `0`, ge: `0`): Offset for pagination.
+  - `limit` (`integer`, optional, default: `100`, ge: `1`, le: `100`): Maximum records to return.
+- **Ordering:** Guaranteed newest-first (`created_at DESC`).
+- **Response Format (`DecisionHistoryResponse`):**
+  ```json
+  {
+    "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "total": 42,
+    "skip": 0,
+    "limit": 100,
+    "items": [
+      {
+        "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+        "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "created_at": "2026-09-09T12:00:00Z",
+        "health_score": 85.5,
+        "health_status": "healthy",
+        "recommended_action": "CONTINUE_MONITORING",
+        "priority": "LOW",
+        "confidence": 0.9,
+        "rationale": "All performance and drift signals remain within normal operational parameters.",
+        "explanation": "No significant metric drop or feature drift detected.",
+        "supporting_signals": {
+          "accuracy": 0.96,
+          "f1_score": 0.94
+        },
+        "requires_human_approval": true,
+        "approval_status": "PENDING"
+      }
+    ]
+  }
+  ```
+
+#### 2. Retrieve Single Decision Record
+- **Path:** `GET /api/spam-models/{model_id}/decisions/{decision_id}`
+- **Response Format (`DecisionLogRead`):**
+  ```json
+  {
+    "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "created_at": "2026-09-09T12:00:00Z",
+    "health_score": 85.5,
+    "health_status": "healthy",
+    "recommended_action": "CONTINUE_MONITORING",
+    "priority": "LOW",
+    "confidence": 0.9,
+    "rationale": "All performance and drift signals remain within normal operational parameters.",
+    "explanation": "No significant metric drop or feature drift detected.",
+    "supporting_signals": {
+      "accuracy": 0.96,
+      "f1_score": 0.94
+    },
+    "requires_human_approval": true,
+    "approval_status": "PENDING"
+  }
+  ```
+
+#### 3. Update Decision Approval Status
+- **Path:** `PATCH /api/spam-models/{model_id}/decisions/{decision_id}/approval`
+- **Request Format (`DecisionApprovalUpdate`):**
+  ```json
+  {
+    "approval_status": "APPROVED"
+  }
+  ```
+  *(or `"approval_status": "REJECTED"`)*
+  *Note:* Extra fields in request payload are strictly forbidden (`extra="forbid"`).
+- **Authorization & RBAC Rules:**
+  - `ADMIN`: Authorized to approve or reject decisions for any registered model.
+  - `ML_ENGINEER`: Authorized to approve or reject decisions only on models they own. Attempts to modify other users' models return `403 Forbidden`.
+  - `VIEWER`: Under the safest least-privilege policy, Viewers are strictly read-only and return `403 Forbidden`.
+- **State Transition Rules:**
+  - `PENDING` $\rightarrow$ `APPROVED`: Allowed (HTTP 200).
+  - `PENDING` $\rightarrow$ `REJECTED`: Allowed (HTTP 200).
+  - `APPROVED` $\rightarrow$ `APPROVED`: Idempotent (HTTP 200).
+  - `REJECTED` $\rightarrow$ `REJECTED`: Idempotent (HTTP 200).
+  - `APPROVED` $\rightarrow$ `REJECTED`: Forbidden (HTTP 400). Finalized decisions cannot be changed.
+  - `REJECTED` $\rightarrow$ `APPROVED`: Forbidden (HTTP 400). Finalized decisions cannot be changed.
+  - Finalized $\rightarrow$ `PENDING`: Forbidden (HTTP 400). Finalized decisions cannot be re-opened.
+- **Response Format (`DecisionLogRead`):**
+  ```json
+  {
+    "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "created_at": "2026-09-09T12:00:00Z",
+    "health_score": 85.5,
+    "health_status": "healthy",
+    "recommended_action": "CONTINUE_MONITORING",
+    "priority": "LOW",
+    "confidence": 0.9,
+    "rationale": "All performance and drift signals remain within normal operational parameters.",
+    "explanation": "No significant metric drop or feature drift detected.",
+    "supporting_signals": {
+      "accuracy": 0.96,
+      "f1_score": 0.94
+    },
+    "requires_human_approval": true,
+    "approval_status": "APPROVED"
+  }
+  ```
+
+#### 4. Trigger AIMD Model Evaluation
+- **Path:** `POST /api/spam-models/{model_id}/decisions/evaluate` (alias: `POST /api/spam-models/{model_id}/decisions`)
+- **Status Code:** `201 Created`
+- **Role Permissions:** `ADMIN`, `ML_ENGINEER` (model owner only). `VIEWER` and non-owner engineers receive `403 Forbidden`.
+- **Processing Pipeline:**
+  1. Retrieves historical monitoring observations for the model from `MonitoringObservationRepository`.
+  2. Synthesizes multi-source analytical context:
+     - **Health Assessment:** Calculates current health score and status (`healthy`, `warning`, `critical`, or `insufficient_data`) via `HealthAssessor` on the most recent observation.
+     - **Performance Trend Analysis:** Evaluates longitudinal metric trends (`improving`, `stable`, `degraded`) via `PerformanceAnalyzer` across chronologically sorted observations.
+     - **Operational Explainability:** Translates analytical signals into diagnostic summaries and primary drivers via `ExplainabilityAnalyzer`.
+     - **Graceful Zero-Observation Fallback:** If zero observations exist, synthesizes an insufficient-data context triggering a safe `HUMAN_REVIEW` recommendation.
+  3. Evaluates deterministic decision rules via `AIMDDecisionEngine`.
+  4. Automatically persists the resulting recommendation as a `DecisionLog` record with `requires_human_approval=True` and `approval_status=ApprovalStatus.PENDING`.
+- **Response Format (`DecisionLogRead`):**
+  ```json
+  {
+    "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "created_at": "2026-09-09T12:00:00Z",
+    "health_score": 93.5,
+    "health_status": "healthy",
+    "recommended_action": "CONTINUE_MONITORING",
+    "priority": "LOW",
+    "confidence": 0.9,
+    "rationale": "Model health and performance are within acceptable operational limits. No data drift or concept drift detected. Continue standard monitoring schedule.",
+    "explanation": "Healthy model performance: composite health score is 93.5/100 (healthy).",
+    "supporting_signals": [
+      "health_healthy(score=93.5)",
+      "performance_stable"
+    ],
+    "requires_human_approval": true,
+    "approval_status": "PENDING"
+  }
+  ```
+
+### Design Principles & Invariants
+- **Controlled Scope:** The PATCH endpoint only mutates `approval_status`. All other fields (`recommended_action`, `priority`, `confidence`, `rationale`, `explanation`, `supporting_signals`, `health_score`, `health_status`, `requires_human_approval`, `model_id`, `created_at`) remain immutable.
+- **Human Invariant:** PhoenixML strictly requires human approval before actions are performed.
+- **Non-Autonomous Execution:** Transitioning a recommendation to `APPROVED` does **NOT** autonomously execute retraining, rollback, deployment, or any other maintenance action. Downstream execution requires explicit human operational procedures.
+
 
 ---
 
-# 12. API Versioning
+# 6.8 Dashboard API
 
-Current Version
+### Purpose
 
-```
-/api/v1/
-```
+The Dashboard API provides consolidated statistics, model inventory summaries, monitoring benchmarks, health distributions, and pending AIMD approval counts displayed on the system dashboard.
 
-Future versions
+### Authorization & Access Control (RBAC)
 
-```
-/api/v2/
-```
+- **Allowed Roles:** `ADMIN`, `ML_ENGINEER`, `VIEWER`.
+- **Scope Enforcement:**
+  - `ADMIN`: Receives global, fleet-wide metrics across all registered models (`scope = "global"`).
+  - `ML_ENGINEER` / `VIEWER`: Receives metrics strictly scoped to models they own (`scope = "user"`).
+  - When querying a specific model via `model_id` (`scope = "model"`), non-admin users can only inspect models they own. Cross-model attempts return `403 Forbidden`. Nonexistent models return `404 Not Found`.
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/dashboard` | Retrieve consolidated dashboard overview (optional `model_id` query param) |
+| GET | `/dashboard/{model_id}` | Retrieve consolidated dashboard metrics for a single registered model |
+
+### Endpoints Specification
+
+#### 1. Retrieve Dashboard Overview
+- **Path:** `GET /api/dashboard`
+- **Query Parameters:**
+  - `model_id` (`uuid`, optional): Optional model ID to scope metrics to a single registered model.
+- **Status Code:** `200 OK`
+- **Response Format (`DashboardOverviewResponse`):**
+  ```json
+  {
+    "scope": "global",
+    "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "generated_at": "2026-09-09T15:00:00Z",
+    "models_summary": {
+      "total_models": 3,
+      "active_models": 2,
+      "development_models": 1,
+      "archived_models": 0
+    },
+    "monitoring_summary": {
+      "total_observations": 48,
+      "latest_observation_at": "2026-09-09T14:30:00Z",
+      "latest_accuracy": 0.95,
+      "latest_precision": 0.94,
+      "latest_recall": 0.93,
+      "latest_f1": 0.935
+    },
+    "health_summary": {
+      "healthy_count": 2,
+      "warning_count": 1,
+      "critical_count": 0,
+      "insufficient_data_count": 0,
+      "system_health_status": "WARNING",
+      "average_health_score": 82.3
+    },
+    "decision_summary": {
+      "total_decisions": 12,
+      "pending_approvals_count": 3,
+      "approved_count": 8,
+      "rejected_count": 1,
+      "critical_priority_count": 0,
+      "recent_decisions": [
+        {
+          "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+          "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "created_at": "2026-09-09T14:35:00Z",
+          "health_score": 75.0,
+          "health_status": "warning",
+          "recommended_action": "HUMAN_REVIEW",
+          "priority": "MEDIUM",
+          "confidence": 0.7,
+          "rationale": "Performance degradation observed without accompanying feature data drift or concept drift.",
+          "explanation": "Health score in warning zone (75.0/100).",
+          "supporting_signals": ["health_warning(score=75.0)"],
+          "requires_human_approval": true,
+          "approval_status": "PENDING"
+        }
+      ]
+    },
+    "model_cards": [
+      {
+        "model_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "name": "ProductionSpamDetector",
+        "status": "ACTIVE",
+        "framework": "Scikit-Learn",
+        "owner_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "observation_count": 24,
+        "latest_observation_at": "2026-09-09T14:30:00Z",
+        "latest_f1_score": 0.935,
+        "latest_health_score": 85.0,
+        "latest_health_status": "healthy",
+        "latest_decision": null,
+        "pending_decisions_count": 1
+      }
+    ]
+  }
+  ```
+
+#### 2. Retrieve Model Dashboard Overview
+- **Path:** `GET /api/dashboard/{model_id}`
+- **Status Code:** `200 OK`
+- **Behavior:** Identical to `/api/dashboard?model_id={model_id}`. Enforces model existence (404) and authorization (403 for non-owners).
+
+#### 3. Operator Frontend Web UI
+- **Path:** `GET /ui/` (and root redirect `GET /` -> `/ui/`)
+- **Type:** Static Single Page Application (SPA) mounted via FastAPI `StaticFiles`
+- **Static Assets:**
+  - `GET /ui/`: HTML5 dashboard entrypoint (`index.html`)
+  - `GET /ui/styles/dashboard.css`: Professional dark-mode MLOps dashboard stylesheet
+  - `GET /ui/src/App.js`: React 18 single-page application component tree
+  - `GET /ui/src/api.js`: REST API client integrating authentication, dashboard queries, evaluation triggers, and approval transitions
+  - `GET /ui/vendor/`: Self-contained offline React 18 production scripts
+- **Key Operator Capabilities:**
+  - Model inventory summary and telemetry benchmarks
+  - Model health score progress meters and system fleet health status
+  - Highlighted pending human approval counts and mandatory HITL advisory banner
+  - Interactive decision review cards with operator Approve / Reject actions
+  - On-demand AIMD evaluation trigger (`POST /api/spam-models/{model_id}/decisions/evaluate`)
+  - Recent decision audit trail table with decision timestamps and approval states
+  - Role-based access control enforcement (`ADMIN`, `ML_ENGINEER`, `VIEWER` read-only)
+  - CORS middleware enabled for decoupled local frontend development servers (e.g., port 3000)
 
 ---
 
-# 13. Security
+# 6.9 Reports API
 
-The API implements:
+### Purpose
 
-- JWT Authentication
-- Password Hashing
-- Input Validation
-- Role-Based Authorization
-- HTTPS Support
-- CORS Protection
+The Reports API generates reports for monitoring, drift analysis, health assessment, and recommendations.
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/reports/monitoring` | Generate monitoring report |
+| GET | `/reports/health` | Generate health report |
+| GET | `/reports/recommendations` | Generate recommendation report |
 
 ---
 
-# 14. API Flow
+# 6.10 Notifications API
+
+### Purpose
+
+The Notifications API allows users to view and manage system notifications.
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/notifications` | Retrieve notifications |
+| PUT | `/notifications/{id}` | Mark notification as read |
+| DELETE | `/notifications/{id}` | Delete notification |
+
+---
+
+# 7. API Request Flow
+
+The following diagram illustrates the lifecycle of a typical API request.
 
 ```mermaid
 sequenceDiagram
 
 participant User
-
 participant React
-
 participant FastAPI
+participant Service
+participant Database
 
-participant AIMD
+User->>React: Perform Action
 
-participant PostgreSQL
+React->>FastAPI: HTTP Request
 
-User->>React: Request
+FastAPI->>Service: Validate Request
 
-React->>FastAPI: REST API
+Service->>Database: Read / Write Data
 
-FastAPI->>AIMD: Evaluate
+Database-->>Service: Result
 
-AIMD->>PostgreSQL: Read Metrics
+Service-->>FastAPI: Processed Response
 
-PostgreSQL-->>AIMD: Metrics
-
-AIMD-->>FastAPI: Recommendation
-
-FastAPI-->>React: JSON
+FastAPI-->>React: JSON Response
 
 React-->>User: Display Result
 ```
 
+The request flow demonstrates how client requests are validated, processed through the business service layer, and translated into standardized JSON responses returned to the frontend.
+
+# 8. Authentication and Authorization
+
+## 8.1 Authentication
+
+PhoenixML secures protected API endpoints using **JSON Web Tokens (JWT)**. After a successful login, the server generates a signed access token that is included in subsequent requests through the HTTP Authorization header.
+
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+
+participant User
+participant Frontend
+participant API
+participant Database
+
+User->>Frontend: Login Credentials
+
+Frontend->>API: POST /auth/login
+
+API->>Database: Validate User
+
+Database-->>API: User Verified
+
+API-->>Frontend: JWT Token
+
+Frontend-->>User: Login Successful
+```
+
+Once authenticated, users can access authorized resources until the token expires or becomes invalid.
+
 ---
 
-# 15. Future APIs
+## 8.2 Authorization
 
-Future releases may include:
+PhoenixML implements **Role-Based Access Control (RBAC)** to restrict access to system resources.
 
-- WebSocket Notifications
-- Batch Model Evaluation
-- Alert Configuration
-- Audit Logs
-- Kubernetes Integration
-- MLflow Integration APIs
+| Role | Permissions |
+|------|-------------|
+| Administrator | Full access to all system resources |
+| ML Engineer | Manage models, monitoring, reports, and recommendations |
+| Viewer | Read-only access to dashboards and reports |
+
+Each API request is validated to ensure the authenticated user has sufficient privileges to perform the requested operation.
 
 ---
 
-# 16. Conclusion
+# 9. Request Validation
 
-The PhoenixML REST API provides a secure and modular interface for authentication, model management, monitoring, and AIMD recommendations. The API is designed to be scalable, versioned, and easy to integrate with frontend applications and future services.
+Before processing any request, the API validates incoming data to ensure correctness and consistency.
+
+Validation includes:
+
+- Required field verification
+- Data type validation
+- Input format checking
+- Value range validation
+- Resource existence verification
+
+Invalid requests are rejected with appropriate HTTP status codes and descriptive error messages.
+
+---
+
+# 10. HTTP Status Codes
+
+PhoenixML uses standard HTTP status codes to communicate the outcome of API requests.
+
+| Status Code | Meaning | Description |
+|-------------|---------|-------------|
+| 200 OK | Success | Request completed successfully |
+| 201 Created | Resource Created | New resource created successfully |
+| 400 Bad Request | Invalid Request | Request contains invalid data |
+| 401 Unauthorized | Authentication Required | Invalid or missing authentication |
+| 403 Forbidden | Access Denied | User lacks required permissions |
+| 404 Not Found | Resource Missing | Requested resource does not exist |
+| 500 Internal Server Error | Server Error | Unexpected server-side error |
+
+Using standardized status codes improves interoperability between the frontend and backend.
+
+---
+
+# 11. Error Handling
+
+The API returns consistent error responses to simplify debugging and improve the user experience.
+
+### Example Error Response
+
+```json
+{
+  "success": false,
+  "message": "Model not found",
+  "error": {
+    "code": 404
+  }
+}
+```
+
+Common error scenarios include:
+
+- Invalid authentication credentials
+- Unauthorized access
+- Missing resources
+- Invalid request data
+- Internal server errors
+
+The API avoids exposing sensitive implementation details while providing meaningful information to assist users and developers.
+
+---
+
+# 12. API Security Best Practices
+
+To protect application resources, PhoenixML follows several security best practices:
+
+- Use HTTPS for secure communication.
+- Authenticate users using JWT.
+- Enforce role-based authorization.
+- Validate all client inputs.
+- Return standardized error responses.
+- Protect sensitive information from unauthorized access.
+
+These practices help ensure secure and reliable communication between the frontend and backend while maintaining the integrity of application data.
+
+# 13. Advantages of the API Design
+
+The API design of PhoenixML provides a standardized and secure communication layer between the frontend application and backend services. By following REST architectural principles and consistent response formats, the API simplifies integration, maintenance, and future development.
+
+The key advantages include:
+
+- **Standardized Communication:** RESTful endpoints provide a consistent interface for all system modules.
+- **Scalability:** New endpoints and services can be added without affecting existing clients.
+- **Security:** JWT-based authentication and role-based authorization protect sensitive resources.
+- **Maintainability:** APIs are organized into functional modules, making development and maintenance easier.
+- **Interoperability:** JSON-based communication allows integration with different frontend frameworks and external systems.
+- **Performance:** Lightweight request and response structures support efficient data exchange.
+
+---
+
+# 14. Future Enhancements
+
+The API architecture has been designed to accommodate future system growth. Potential enhancements include:
+
+- Versioned APIs (e.g., `/api/v2`) for backward compatibility.
+- Support for pagination, filtering, and sorting of large datasets.
+- Batch processing endpoints for monitoring multiple models simultaneously.
+- Integration with external MLOps platforms and cloud services.
+- WebSocket support for real-time monitoring notifications.
+- Comprehensive API documentation using OpenAPI (Swagger).
+
+These enhancements can be incorporated while preserving compatibility with the existing API structure.
+
+---
+
+# 15. Conclusion
+
+This API Design Document presents the RESTful communication architecture for **PhoenixML – An Intelligent MLOps Decision Support Framework for Spam Email Detection**.
+
+The API enables secure and efficient interaction between the React frontend and the FastAPI backend through standardized endpoints, JSON-based communication, and JWT authentication. It supports all major functional modules, including authentication, spam model management, monitoring, drift detection, health assessment, AIMD recommendations, reporting, and notifications.
+
+The modular API structure promotes maintainability, scalability, and interoperability, providing a reliable foundation for the PhoenixML application while supporting future enhancements and integration with additional MLOps capabilities.
+
+---
+
+# References
+
+1. Fielding, R. T. *Architectural Styles and the Design of Network-based Software Architectures* (REST Dissertation).
+2. FastAPI Documentation.
+3. OpenAPI Specification.
+4. RFC 9110 – HTTP Semantics.
+5. JSON Web Token (JWT) – RFC 7519.
+6. IEEE Std 1016-2009 – IEEE Standard for Software Design Descriptions.
+7. ISO/IEC/IEEE 12207 – Systems and Software Engineering.

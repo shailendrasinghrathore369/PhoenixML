@@ -1,0 +1,86 @@
+{
+  "model_name": "SpamSMS-LogisticRegression",
+  "model_version": "1.0.0",
+  "algorithm": "Logistic Regression",
+  "classifier_type": "Binary Classifier",
+  "framework": "Scikit-Learn",
+  "framework_version": "1.9.0",
+  "target_classes": {
+    "0": "ham",
+    "1": "spam"
+  },
+  "positive_class": "spam",
+  "dataset": {
+    "name": "SMS Spam Collection Dataset",
+    "source": "UCI Machine Learning Repository (https://archive.ics.uci.edu/dataset/228/sms+spam+collection)",
+    "total_samples": 5574,
+    "class_distribution": {
+      "total_samples": 5574,
+      "ham_count": 4827,
+      "spam_count": 747,
+      "ham_ratio": 0.866,
+      "spam_ratio": 0.134
+    }
+  },
+  "data_split": {
+    "test_size": 0.2,
+    "random_state": 42,
+    "stratified": true,
+    "training_samples": 4459,
+    "test_samples": 1115,
+    "train_class_distribution": {
+      "total_samples": 4459,
+      "ham_count": 3861,
+      "spam_count": 598,
+      "ham_ratio": 0.8659,
+      "spam_ratio": 0.1341
+    },
+    "test_class_distribution": {
+      "total_samples": 1115,
+      "ham_count": 966,
+      "spam_count": 149,
+      "ham_ratio": 0.8664,
+      "spam_ratio": 0.1336
+    }
+  },
+  "feature_extraction": {
+    "method": "TF-IDF",
+    "ngram_range": [
+      1,
+      2
+    ],
+    "stop_words": "english",
+    "min_df": 2,
+    "sublinear_tf": true,
+    "vocabulary_size": 7173
+  },
+  "hyperparameters": {
+    "C": 10.0,
+    "class_weight": "balanced",
+    "max_iter": 1000,
+    "random_state": 42,
+    "solver": "lbfgs"
+  },
+  "evaluation_metrics": {
+    "accuracy": 0.9901,
+    "precision": 0.96,
+    "recall": 0.9664,
+    "f1_score": 0.9632,
+    "confusion_matrix": {
+      "true_negatives": 960,
+      "false_positives": 6,
+      "false_negatives": 5,
+      "true_positives": 144
+    }
+  },
+  "artifact": {
+    "filename": "spam_classifier_v1.joblib",
+    "format": "joblib",
+    "pipeline_steps": [
+      "tfidf",
+      "clf"
+    ]
+  },
+  "training_timestamp": "2026-10-23T16:21:21.881586+00:00",
+  "notes": "Reference ML model artifact trained for PhoenixML demonstration and decision-support monitoring. PhoenixML is a decision-support platform with mandatory human approval and does not perform autonomous training, deployment, or rollbacks."
+}
