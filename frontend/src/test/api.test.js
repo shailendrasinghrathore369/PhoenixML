@@ -126,6 +126,101 @@ describe('PhoenixML Frontend API Client (api.js)', () => {
     });
   });
 
+  describe('api.listObservations', () => {
+    it('sends GET /api/spam-models/{modelId}/monitoring with default pagination query params', async () => {
+      const mockObservations = [
+        {
+          id: 'obs-1',
+          model_id: 'model-123',
+          observed_at: '2026-11-09T10:00:00Z',
+          prediction_count: 100,
+          positive_prediction_count: 15,
+          negative_prediction_count: 85,
+          accuracy: 0.98,
+          precision: 0.95,
+          recall: 0.92,
+          f1_score: 0.935,
+        },
+      ];
+
+      authStorage.setToken('auth-token-123');
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => mockObservations,
+      });
+
+      const result = await api.listObservations('model-123');
+
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      const [url, options] = global.fetch.mock.calls[0];
+      expect(url).toContain('/api/spam-models/model-123/monitoring?skip=0&limit=100');
+      expect(options.headers['Authorization']).toBe('Bearer auth-token-123');
+      expect(result).toEqual(mockObservations);
+    });
+
+    it('sends custom skip and limit pagination parameters and properly encodes modelId', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => [],
+      });
+
+      await api.listObservations('model/with-slash', { skip: 25, limit: 50 });
+      const [url] = global.fetch.mock.calls[0];
+      expect(url).toContain('/api/spam-models/model%2Fwith-slash/monitoring?skip=25&limit=50');
+    });
+
+    it('handles HTTP error responses and preserves backend error detail', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ detail: 'Model not found' }),
+      });
+
+      await expect(api.listObservations('missing-model')).rejects.toThrow('Model not found');
+    });
+  });
+
+  describe('api.getObservation', () => {
+    it('sends GET /api/spam-models/{modelId}/monitoring/{observationId} and returns observation details', async () => {
+      const mockObservation = {
+        id: 'obs-uuid-456',
+        model_id: 'model-123',
+        observed_at: '2026-11-09T10:00:00Z',
+        prediction_count: 50,
+        accuracy: 0.97,
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => mockObservation,
+      });
+
+      const result = await api.getObservation('model-123', 'obs-uuid-456');
+      const [url] = global.fetch.mock.calls[0];
+      expect(url).toContain('/api/spam-models/model-123/monitoring/obs-uuid-456');
+      expect(result).toEqual(mockObservation);
+    });
+
+    it('throws error with 404 status when observation is not found', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ detail: 'Observation not found' }),
+      });
+
+      await expect(api.getObservation('model-123', 'non-existent-obs')).rejects.toThrow('Observation not found');
+    });
+  });
+
   describe('api.createModel', () => {
     it('sends POST /api/spam-models with JSON payload and returns created model', async () => {
       const newModelPayload = {

@@ -83,8 +83,12 @@ function AppContent() {
           <TelemetryPage
             user={auth.user}
             dashboardData={dashboard.dashboardData}
+            selectedModelId={dashboard.selectedModelId}
+            setSelectedModelId={dashboard.setSelectedModelId}
+            modelMap={dashboard.modelMap}
             loading={dashboard.loading}
             onNavigate={nav.navigateTo}
+            toast={toast}
           />
         );
       case 'audit':

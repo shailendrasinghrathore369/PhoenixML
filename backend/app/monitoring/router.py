@@ -1,6 +1,6 @@
 import uuid
-from typing import List
-from fastapi import APIRouter, Depends, Query, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.auth.dependencies import require_roles
 from app.users.models import User, UserRole
@@ -8,6 +8,10 @@ from app.models.monitoring_schemas import MonitoringObservationCreate, Monitorin
 from app.monitoring.service import MonitoringService
 
 router = APIRouter()
+
+def _get_owner_filter(current_user: User) -> Optional[uuid.UUID]:
+    """ADMIN has fleet-wide scope; other roles remain owner-scoped."""
+    return None if current_user.role == UserRole.ADMIN else current_user.id
 
 @router.post("/{model_id}/monitoring", response_model=MonitoringObservationRead, status_code=status.HTTP_201_CREATED)
 def create_observation(
@@ -27,7 +31,7 @@ def list_observations(
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.ML_ENGINEER, UserRole.VIEWER)),
     service: MonitoringService = Depends()
 ):
-    return service.list_observations(model_id, current_user.id, skip=skip, limit=limit)
+    return service.list_observations(model_id, _get_owner_filter(current_user), skip=skip, limit=limit)
 
 @router.get("/{model_id}/monitoring/{observation_id}", response_model=MonitoringObservationRead)
 def get_observation(
@@ -38,8 +42,7 @@ def get_observation(
 ):
     # Service fetches observation and validates its model_id and owner_id.
     # To fully enforce URL structure, we must ensure observation.model_id == model_id from URL
-    obs = service.get_observation(observation_id, current_user.id)
-    from fastapi import HTTPException
+    obs = service.get_observation(observation_id, _get_owner_filter(current_user))
     if obs.model_id != model_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Observation not found")
     return obs
@@ -53,7 +56,6 @@ def delete_observation(
 ):
     # We must ensure the observation is actually attached to this model_id to prevent URL manipulation.
     obs = service.get_observation(observation_id, current_user.id)
-    from fastapi import HTTPException
     if obs.model_id != model_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Observation not found")
         

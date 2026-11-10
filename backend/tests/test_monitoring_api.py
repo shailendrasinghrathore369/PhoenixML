@@ -38,7 +38,7 @@ def test_user_engine(client: TestClient):
     user_id = str(user.id)
     model_id_str = str(model.id)
     db.close()
-    
+
     return {"user_id": user_id, "token": token, "model_id": model_id_str}
 
 @pytest.fixture
@@ -71,7 +71,7 @@ def test_user_viewer(client: TestClient):
     user_id = str(user.id)
     model_id_str = str(model.id)
     db.close()
-    
+
     return {"user_id": user_id, "token": token, "model_id": model_id_str}
 
 @pytest.fixture
@@ -104,7 +104,40 @@ def test_user_admin(client: TestClient):
     user_id = str(user.id)
     model_id_str = str(model.id)
     db.close()
-    
+
+    return {"user_id": user_id, "token": token, "model_id": model_id_str}
+
+@pytest.fixture
+def test_user_engine2(client: TestClient):
+    db = TestingSessionLocal()
+    user = User(
+        username="mon_ml_eng2",
+        email="mon_ml2@example.com",
+        full_name="Monitoring ML Eng 2",
+        hashed_password=get_password_hash("password123"),
+        role=UserRole.ML_ENGINEER,
+        is_active=True
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    model = RegisteredModel(
+        id=uuid.uuid4(),
+        name="EngineersModel2",
+        framework="PT",
+        owner_id=user.id,
+        status=ModelStatus.ACTIVE
+    )
+    db.add(model)
+    db.commit()
+
+    response = client.post("/api/auth/login", data={"username": "mon_ml_eng2", "password": "password123"})
+    token = response.json()["access_token"]
+    user_id = str(user.id)
+    model_id_str = str(model.id)
+    db.close()
+
     return {"user_id": user_id, "token": token, "model_id": model_id_str}
 
 def test_unauthenticated_access(client: TestClient):
@@ -359,3 +392,95 @@ def test_nonexistent_model_returns_404(client: TestClient, test_user_engine):
     
     resp_list = client.get(f"/api/spam-models/{nonexistent_model_id}/monitoring", headers=headers)
     assert resp_list.status_code == 404
+
+def test_admin_can_list_and_get_engineer_owned_model_observations(client: TestClient, test_user_engine, test_user_admin):
+    # Engineer creates observation on their own model
+    headers_eng = {"Authorization": f"Bearer {test_user_engine['token']}"}
+    eng_model_id = test_user_engine['model_id']
+
+    payload = {
+        "model_id": eng_model_id,
+        "observed_at": datetime.now(timezone.utc).isoformat(),
+        "prediction_count": 75,
+        "accuracy": 0.96
+    }
+    resp_create = client.post(f"/api/spam-models/{eng_model_id}/monitoring", json=payload, headers=headers_eng)
+    assert resp_create.status_code == 201
+    obs_id = resp_create.json()["id"]
+
+    # ADMIN lists observations on the engineer's model (fleet-wide visibility)
+    headers_admin = {"Authorization": f"Bearer {test_user_admin['token']}"}
+    resp_list = client.get(f"/api/spam-models/{eng_model_id}/monitoring", headers=headers_admin)
+    assert resp_list.status_code == 200
+    obs_ids = [obs["id"] for obs in resp_list.json()]
+    assert obs_id in obs_ids
+
+    # ADMIN retrieves specific observation on the engineer's model
+    resp_detail = client.get(f"/api/spam-models/{eng_model_id}/monitoring/{obs_id}", headers=headers_admin)
+    assert resp_detail.status_code == 200
+    assert resp_detail.json()["id"] == obs_id
+    assert resp_detail.json()["prediction_count"] == 75
+
+def test_ml_engineer_cannot_access_another_engineer_observations(client: TestClient, test_user_engine, test_user_engine2):
+    # Engineer 1 creates observation on model 1
+    headers_eng1 = {"Authorization": f"Bearer {test_user_engine['token']}"}
+    model1_id = test_user_engine['model_id']
+
+    payload = {
+        "model_id": model1_id,
+        "observed_at": datetime.now(timezone.utc).isoformat(),
+        "prediction_count": 25,
+        "accuracy": 0.94
+    }
+    resp_create = client.post(f"/api/spam-models/{model1_id}/monitoring", json=payload, headers=headers_eng1)
+    assert resp_create.status_code == 201
+    obs_id = resp_create.json()["id"]
+
+    # Engineer 2 attempts to list observations on model 1 -> 404 (masked ownership)
+    headers_eng2 = {"Authorization": f"Bearer {test_user_engine2['token']}"}
+    resp_list = client.get(f"/api/spam-models/{model1_id}/monitoring", headers=headers_eng2)
+    assert resp_list.status_code == 404
+
+    # Engineer 2 attempts to get detail of Engineer 1's observation -> 404
+    resp_get = client.get(f"/api/spam-models/{model1_id}/monitoring/{obs_id}", headers=headers_eng2)
+    assert resp_get.status_code == 404
+
+    # Engineer 2 attempts to delete Engineer 1's observation -> 404
+    resp_delete = client.delete(f"/api/spam-models/{model1_id}/monitoring/{obs_id}", headers=headers_eng2)
+    assert resp_delete.status_code == 404
+
+    # Engineer 2 attempts to create an observation on Engineer 1's model -> 404
+    payload_cross = {
+        "model_id": model1_id,
+        "observed_at": datetime.now(timezone.utc).isoformat(),
+        "prediction_count": 10
+    }
+    resp_create_cross = client.post(f"/api/spam-models/{model1_id}/monitoring", json=payload_cross, headers=headers_eng2)
+    assert resp_create_cross.status_code == 404
+
+def test_viewer_retains_owner_read_and_cannot_mutate(client: TestClient, test_user_viewer, test_user_engine):
+    headers_viewer = {"Authorization": f"Bearer {test_user_viewer['token']}"}
+    viewer_model_id = test_user_viewer['model_id']
+    eng_model_id = test_user_engine['model_id']
+
+    # VIEWER can list observations on their own model
+    resp_list_own = client.get(f"/api/spam-models/{viewer_model_id}/monitoring", headers=headers_viewer)
+    assert resp_list_own.status_code == 200
+
+    # VIEWER cannot list observations on engineer's model (404 masked)
+    resp_list_other = client.get(f"/api/spam-models/{eng_model_id}/monitoring", headers=headers_viewer)
+    assert resp_list_other.status_code == 404
+
+    # VIEWER cannot POST observation (403 forbidden)
+    payload = {
+        "model_id": viewer_model_id,
+        "observed_at": datetime.now(timezone.utc).isoformat(),
+        "prediction_count": 10
+    }
+    resp_post = client.post(f"/api/spam-models/{viewer_model_id}/monitoring", json=payload, headers=headers_viewer)
+    assert resp_post.status_code == 403
+
+    # VIEWER cannot DELETE observation (403 forbidden)
+    fake_obs_id = str(uuid.uuid4())
+    resp_delete = client.delete(f"/api/spam-models/{viewer_model_id}/monitoring/{fake_obs_id}", headers=headers_viewer)
+    assert resp_delete.status_code == 403

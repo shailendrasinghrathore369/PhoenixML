@@ -200,6 +200,28 @@ export const api = {
   },
 
   /**
+   * List monitoring observations for a specific spam model with optional pagination.
+   */
+  listObservations: async (modelId, params = { skip: 0, limit: 100 }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.skip !== undefined && params?.skip !== null) {
+      searchParams.append('skip', String(params.skip));
+    }
+    if (params?.limit !== undefined && params?.limit !== null) {
+      searchParams.append('limit', String(params.limit));
+    }
+    const query = searchParams.toString();
+    return apiRequest(`/spam-models/${encodeURIComponent(modelId)}/monitoring${query ? `?${query}` : ''}`);
+  },
+
+  /**
+   * Retrieve a specific monitoring observation for a model by UUID.
+   */
+  getObservation: async (modelId, observationId) => {
+    return apiRequest(`/spam-models/${encodeURIComponent(modelId)}/monitoring/${encodeURIComponent(observationId)}`);
+  },
+
+  /**
    * Trigger AIMD model evaluation across monitoring observations.
    */
   evaluateModel: async (modelId) => {

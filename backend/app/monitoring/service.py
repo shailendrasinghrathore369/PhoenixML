@@ -14,9 +14,9 @@ class MonitoringService:
         self.obs_repo = MonitoringObservationRepository(db)
         self.model_repo = RegisteredModelRepository(db)
 
-    def _get_and_authorize_model(self, model_id: uuid.UUID, owner_id: uuid.UUID):
+    def _get_and_authorize_model(self, model_id: uuid.UUID, owner_id: Optional[uuid.UUID]):
         model = self.model_repo.get_by_id(model_id)
-        if not model or model.owner_id != owner_id:
+        if not model or (owner_id is not None and model.owner_id != owner_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Model not found"
@@ -43,7 +43,7 @@ class MonitoringService:
     def get_observation(
         self,
         observation_id: uuid.UUID,
-        owner_id: uuid.UUID
+        owner_id: Optional[uuid.UUID]
     ) -> MonitoringObservation:
         obs = self.obs_repo.get_by_id(observation_id)
         if not obs:
@@ -54,7 +54,7 @@ class MonitoringService:
         
         # Verify ownership via model
         model = self.model_repo.get_by_id(obs.model_id)
-        if not model or model.owner_id != owner_id:
+        if not model or (owner_id is not None and model.owner_id != owner_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Observation not found"
@@ -65,7 +65,7 @@ class MonitoringService:
     def list_observations(
         self,
         model_id: uuid.UUID,
-        owner_id: uuid.UUID,
+        owner_id: Optional[uuid.UUID],
         skip: int = 0,
         limit: int = 100
     ) -> Sequence[MonitoringObservation]:
@@ -75,7 +75,7 @@ class MonitoringService:
     def delete_observation(
         self,
         observation_id: uuid.UUID,
-        owner_id: uuid.UUID
+        owner_id: Optional[uuid.UUID]
     ) -> None:
         obs = self.get_observation(observation_id, owner_id=owner_id)
         self.obs_repo.delete(obs.id)

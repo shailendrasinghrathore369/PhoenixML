@@ -832,36 +832,359 @@ describe('ApprovalsPage', () => {
 });
 
 describe('TelemetryPage', () => {
-  it('renders observation counts, F1 benchmark, and roadmap state', () => {
-    const handleNavigate = vi.fn();
-    const dashboardData = {
-      monitoring_summary: {
-        total_observations: 250,
-        latest_f1: 0.934,
-        latest_accuracy: 0.951,
-        latest_observation_at: '2026-11-08T12:00:00Z',
+  const sampleModels = [
+    {
+      id: 'model-1',
+      name: 'SpamSMS-LogisticRegression',
+      framework: 'scikit-learn',
+      algorithm: 'LogisticRegression',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'model-2',
+      name: 'Candidate-NaiveBayes',
+      framework: 'scikit-learn',
+      algorithm: 'MultinomialNB',
+      status: 'DEVELOPMENT',
+    },
+  ];
+
+  const sampleObservations = [
+    {
+      id: 'obs-1',
+      model_id: 'model-1',
+      observed_at: '2026-11-10T12:00:00Z',
+      prediction_count: 100,
+      positive_prediction_count: 40,
+      negative_prediction_count: 60,
+      accuracy: 0.95,
+      precision: 0.92,
+      recall: 0.90,
+      f1_score: 0.9097,
+    },
+    {
+      id: 'obs-2',
+      model_id: 'model-1',
+      observed_at: '2026-11-09T12:00:00Z',
+      prediction_count: 80,
+      positive_prediction_count: 30,
+      negative_prediction_count: 50,
+      accuracy: 0.91,
+      precision: 0.88,
+      recall: 0.86,
+      f1_score: 0.8698,
+    },
+  ];
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(api, 'listModels').mockResolvedValue(sampleModels);
+    vi.spyOn(api, 'listObservations').mockResolvedValue(sampleObservations);
+  });
+
+  it('renders model selector, summary metrics, and observation table for selected model', async () => {
+    render(
+      <ThemeProvider>
+        <TelemetryPage user={{ role: 'ADMIN' }} />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByText('Model Telemetry & Performance Trends')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/select registered model/i)).toBeInTheDocument();
+      expect(screen.getByText(/SpamSMS-LogisticRegression/)).toBeInTheDocument();
+    });
+
+    // Check summary metric cards
+    expect(screen.getByText('Latest F1 Score')).toBeInTheDocument();
+    expect(screen.getAllByText('0.9097').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('Historical Avg F1')).toBeInTheDocument();
+    // Avg F1: (0.9097 + 0.8698) / 2 = 0.88975 -> 0.8898
+    expect(screen.getByText('0.8898')).toBeInTheDocument();
+    expect(screen.getByText('Latest Accuracy')).toBeInTheDocument();
+    expect(screen.getByText('95.0%')).toBeInTheDocument();
+    expect(screen.getByText('Historical Avg Accuracy')).toBeInTheDocument();
+    // Avg Accuracy: (0.95 + 0.91) / 2 = 0.93 -> 93.0%
+    expect(screen.getByText('93.0%')).toBeInTheDocument();
+
+    // Check observation table headers
+    expect(screen.getByText('Historical Observations Log')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /observed at/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /total predictions/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /positive \(spam\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /negative \(ham\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /^accuracy$/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /^precision$/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /^recall$/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /f1 score/i })).toBeInTheDocument();
+
+    // Check observation table values
+    expect(screen.getByText('100')).toBeInTheDocument();
+    expect(screen.getByText('40')).toBeInTheDocument();
+    expect(screen.getByText('60')).toBeInTheDocument();
+    expect(screen.getByText('0.9500')).toBeInTheDocument();
+    expect(screen.getByText('0.9200')).toBeInTheDocument();
+    expect(screen.getAllByText('0.9000').length).toBeGreaterThanOrEqual(2);
+
+    // Roadmap cards present
+    expect(screen.getByText('Telemetry & Visualization Roadmap (Milestone 3)')).toBeInTheDocument();
+    expect(screen.getByText('Time-Series Performance Charts')).toBeInTheDocument();
+  });
+
+  it('supports switching models without full page reload and fetches target observations', async () => {
+    const model2Obs = [
+      {
+        id: 'obs-m2-1',
+        model_id: 'model-2',
+        observed_at: '2026-11-10T14:00:00Z',
+        prediction_count: 50,
+        positive_prediction_count: 20,
+        negative_prediction_count: 30,
+        accuracy: 0.88,
+        precision: 0.85,
+        recall: 0.82,
+        f1_score: 0.8347,
       },
-    };
+    ];
+
+    vi.spyOn(api, 'listObservations').mockImplementation(async (modelId) => {
+      if (modelId === 'model-2') return model2Obs;
+      return sampleObservations;
+    });
+
+    const handleSelectModel = vi.fn();
 
     render(
       <ThemeProvider>
         <TelemetryPage
           user={{ role: 'ADMIN' }}
-          dashboardData={dashboardData}
-          onNavigate={handleNavigate}
+          selectedModelId="model-1"
+          setSelectedModelId={handleSelectModel}
         />
       </ThemeProvider>
     );
 
-    expect(screen.getByText('Model Telemetry & Performance Trends')).toBeInTheDocument();
-    expect(screen.getByText('250')).toBeInTheDocument();
-    expect(screen.getByText('0.9340')).toBeInTheDocument();
-    expect(screen.getByText('95.1%')).toBeInTheDocument();
-    expect(screen.getByText('Telemetry Explorer Coming in Milestone 3')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getAllByText('0.9097').length).toBeGreaterThanOrEqual(1);
+    });
+
+    const select = screen.getByLabelText(/select registered model/i);
+    fireEvent.change(select, { target: { value: 'model-2' } });
+
+    expect(handleSelectModel).toHaveBeenCalledWith('model-2');
+  });
+
+  it('handles pagination with skip and limit correctly', async () => {
+    const page1Obs = Array.from({ length: 10 }, (_, i) => ({
+      id: `p1-obs-${i}`,
+      model_id: 'model-1',
+      observed_at: `2026-11-${String(10 - i).padStart(2, '0')}T10:00:00Z`,
+      prediction_count: 50,
+      positive_prediction_count: 20,
+      negative_prediction_count: 30,
+      accuracy: 0.90,
+      precision: 0.89,
+      recall: 0.88,
+      f1_score: 0.885,
+    }));
+
+    const page2Obs = [
+      {
+        id: 'p2-obs-1',
+        model_id: 'model-1',
+        observed_at: '2026-10-30T10:00:00Z',
+        prediction_count: 30,
+        positive_prediction_count: 10,
+        negative_prediction_count: 20,
+        accuracy: 0.85,
+        precision: 0.84,
+        recall: 0.83,
+        f1_score: 0.835,
+      },
+    ];
+
+    const listObsSpy = vi.spyOn(api, 'listObservations').mockImplementation(async (modelId, params) => {
+      if (params?.skip === 10) return page2Obs;
+      return page1Obs;
+    });
+
+    render(
+      <ThemeProvider>
+        <TelemetryPage user={{ role: 'ADMIN' }} selectedModelId="model-1" />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Showing 1 to 10 observations · Page 1')).toBeInTheDocument();
+    });
+
+    const prevBtn = screen.getByRole('button', { name: /previous page/i });
+    const nextBtn = screen.getByRole('button', { name: /next page/i });
+
+    expect(prevBtn).toBeDisabled();
+    expect(nextBtn).not.toBeDisabled();
+
+    // Click Next
+    fireEvent.click(nextBtn);
+
+    await waitFor(() => {
+      expect(listObsSpy).toHaveBeenCalledWith('model-1', { skip: 10, limit: 10 });
+      expect(screen.getByText('Showing 11 to 11 observations · Page 2')).toBeInTheDocument();
+    });
+
+    expect(prevBtn).not.toBeDisabled();
+    expect(nextBtn).toBeDisabled(); // page 2 has 1 item < PAGE_SIZE
+
+    // Click Previous
+    fireEvent.click(prevBtn);
+
+    await waitFor(() => {
+      expect(listObsSpy).toHaveBeenCalledWith('model-1', { skip: 0, limit: 10 });
+      expect(screen.getByText('Showing 1 to 10 observations · Page 1')).toBeInTheDocument();
+    });
+  });
+
+  it('handles null metrics safely without fabricated values and calculates averages only from non-null values', async () => {
+    const nullMetricObs = [
+      {
+        id: 'obs-null-1',
+        model_id: 'model-1',
+        observed_at: '2026-11-10T12:00:00Z',
+        prediction_count: 50,
+        positive_prediction_count: 25,
+        negative_prediction_count: 25,
+        accuracy: null,
+        precision: 0.90,
+        recall: null,
+        f1_score: 0.88,
+      },
+      {
+        id: 'obs-null-2',
+        model_id: 'model-1',
+        observed_at: '2026-11-09T12:00:00Z',
+        prediction_count: 50,
+        positive_prediction_count: 25,
+        negative_prediction_count: 25,
+        accuracy: 0.94,
+        precision: null,
+        recall: 0.86,
+        f1_score: null,
+      },
+    ];
+
+    vi.spyOn(api, 'listObservations').mockResolvedValue(nullMetricObs);
+
+    render(
+      <ThemeProvider>
+        <TelemetryPage user={{ role: 'ADMIN' }} selectedModelId="model-1" />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Historical Observations Log')).toBeInTheDocument();
+    });
+
+    // Latest observation metrics:
+    // Obs 1 has accuracy: null -> 'N/A'
+    // Obs 1 has f1_score: 0.88 -> '0.8800' (KPI card and table row)
+    expect(screen.getAllByText('0.8800').length).toBeGreaterThanOrEqual(2);
+
+    // Historical Averages:
+    // F1 has 1 non-null value (0.88) -> 0.8800
+    // Accuracy has 1 non-null value (0.94) -> 94.0%
+    expect(screen.getByText('94.0%')).toBeInTheDocument();
+    expect(screen.getAllByText('Mean of 1 recorded observation').length).toBe(2);
+
+    // Precision has 1 non-null value (0.90) -> 0.9000 (card + table cell)
+    expect(screen.getAllByText('0.9000').length).toBeGreaterThanOrEqual(2);
+    // Recall has 1 non-null value (0.86) -> 0.8600 (card + table cell)
+    expect(screen.getAllByText('0.8600').length).toBeGreaterThanOrEqual(2);
+
+    // In the table, null cells render 'N/A'
+    const naCells = screen.getAllByText('N/A');
+    expect(naCells.length).toBeGreaterThan(0);
+  });
+
+  it('renders empty state when a model has zero observations and navigates to fleet overview', async () => {
+    vi.spyOn(api, 'listObservations').mockResolvedValue([]);
+    const handleNavigate = vi.fn();
+
+    render(
+      <ThemeProvider>
+        <TelemetryPage user={{ role: 'ADMIN' }} selectedModelId="model-1" onNavigate={handleNavigate} />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('No Historical Observations Recorded')).toBeInTheDocument();
+    });
 
     const evalBtn = screen.getByRole('button', { name: /run model evaluations in fleet overview/i });
+    expect(evalBtn).toBeInTheDocument();
     fireEvent.click(evalBtn);
     expect(handleNavigate).toHaveBeenCalledWith('dashboard');
+  });
+
+  it('renders empty state when no registered models exist in scope', async () => {
+    vi.spyOn(api, 'listModels').mockResolvedValue([]);
+    const handleNavigate = vi.fn();
+
+    render(
+      <ThemeProvider>
+        <TelemetryPage user={{ role: 'ADMIN' }} onNavigate={handleNavigate} />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('No Registered Models Found')).toBeInTheDocument();
+    });
+
+    const regBtn = screen.getByRole('button', { name: /go to model registry/i });
+    fireEvent.click(regBtn);
+    expect(handleNavigate).toHaveBeenCalledWith('models');
+  });
+
+  it('displays error state with retry button on API failure', async () => {
+    const listObsSpy = vi.spyOn(api, 'listObservations')
+      .mockRejectedValueOnce(new Error('Network failure'))
+      .mockResolvedValueOnce(sampleObservations);
+
+    render(
+      <ThemeProvider>
+        <TelemetryPage user={{ role: 'ADMIN' }} selectedModelId="model-1" />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to Load Telemetry Observations')).toBeInTheDocument();
+      expect(screen.getByText('Network failure')).toBeInTheDocument();
+    });
+
+    const retryBtn = screen.getByRole('button', { name: /retry/i });
+    fireEvent.click(retryBtn);
+
+    await waitFor(() => {
+      expect(listObsSpy).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Historical Observations Log')).toBeInTheDocument();
+    });
+  });
+
+  it('handles authorization (403) error and displays clear permission notice', async () => {
+    const authError = new Error('Forbidden');
+    authError.status = 403;
+    vi.spyOn(api, 'listObservations').mockRejectedValue(authError);
+
+    render(
+      <ThemeProvider>
+        <TelemetryPage user={{ role: 'VIEWER' }} selectedModelId="model-1" />
+      </ThemeProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to Load Telemetry Observations')).toBeInTheDocument();
+      expect(screen.getByText(/access denied/i)).toBeInTheDocument();
+    });
   });
 });
 
