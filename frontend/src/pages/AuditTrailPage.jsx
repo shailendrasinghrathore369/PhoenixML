@@ -2,11 +2,9 @@ import React from 'react';
 import {
   History,
   ShieldCheck,
-  Filter,
   CheckCircle,
   XCircle,
   Clock,
-  ArrowRight,
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader.jsx';
 import { MetricCard } from '../components/MetricCard.jsx';
@@ -39,11 +37,6 @@ export function AuditTrailPage({
         icon={History}
         title="Decision Audit Trail & Governance Log"
         subtitle="Immutable chronological audit trail of all AIMD recommendations, operator decisions, and rationale records."
-        badge={
-          <StatusBadge variant="info" size="sm">
-            Phase 3B · Milestone 4
-          </StatusBadge>
-        }
       />
 
       {/* Audit Stats KPIs */}
@@ -107,52 +100,6 @@ export function AuditTrailPage({
             decisions={recentDecisions}
             modelMap={modelMap}
           />
-        </div>
-      </section>
-
-      {/* Milestone 4 Roadmap & Audit Filters Preview */}
-      <section className="section">
-        <div className="section-header">
-          <h2 className="section-title">
-            <Filter className="icon-sm text-primary" aria-hidden="true" />
-            <span>Audit Trail Enhancements (Milestone 4)</span>
-          </h2>
-          <span className="section-meta">Advanced Querying & Deep Signals</span>
-        </div>
-
-        <div className="roadmap-grid">
-          <div className="roadmap-card">
-            <div className="roadmap-card-header">
-              <Filter className="icon-sm text-primary" aria-hidden="true" />
-              <h3 className="roadmap-card-title">Status & Priority Filtering</h3>
-            </div>
-            <p className="roadmap-card-desc">
-              Filter audit records by approval status (Pending, Approved, Rejected) and recommendation priority (Critical, High, Medium, Low).
-            </p>
-            <span className="roadmap-badge">Query Filters</span>
-          </div>
-
-          <div className="roadmap-card">
-            <div className="roadmap-card-header">
-              <History className="icon-sm text-primary" aria-hidden="true" />
-              <h3 className="roadmap-card-title">Full Multi-Page History</h3>
-            </div>
-            <p className="roadmap-card-desc">
-              Paginated traversal across hundreds of historical decision records using backend pagination controls (`skip`, `limit`, and `total`).
-            </p>
-            <span className="roadmap-badge">GET /api/spam-models/{'{id}'}/decisions</span>
-          </div>
-
-          <div className="roadmap-card">
-            <div className="roadmap-card-header">
-              <ShieldCheck className="icon-sm text-primary" aria-hidden="true" />
-              <h3 className="roadmap-card-title">Deep Explainability Inspector</h3>
-            </div>
-            <p className="roadmap-card-desc">
-              Unpack structured `supporting_signals` into categorized evidence cards (health drops, performance trends, concept drift, data drift).
-            </p>
-            <span className="roadmap-badge">Signal Inspector</span>
-          </div>
         </div>
       </section>
     </div>

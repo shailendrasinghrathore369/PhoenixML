@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../lib/api.js';
 import { isViewer } from '../lib/utils.js';
 
@@ -9,22 +9,34 @@ export function useDashboard(user, onNotify) {
   const [actionLoading, setActionLoading] = useState(null);
   const [evalResults, setEvalResults] = useState({});
 
-  // Fetch consolidated dashboard data
-  const loadDashboard = useCallback(async (modelId = selectedModelId) => {
+  const notifyRef = useRef(onNotify);
+  useEffect(() => {
+    notifyRef.current = onNotify;
+  }, [onNotify]);
+
+  const selectedModelIdRef = useRef(selectedModelId);
+  useEffect(() => {
+    selectedModelIdRef.current = selectedModelId;
+  }, [selectedModelId]);
+
+  // Fetch consolidated dashboard data with stable callback reference
+  const loadDashboard = useCallback(async (modelId) => {
+    const targetId = modelId !== undefined ? modelId : selectedModelIdRef.current;
     setLoading(true);
     try {
-      const data = await api.getDashboardOverview(modelId || null);
+      const data = await api.getDashboardOverview(targetId || null);
       setDashboardData(data);
+      return data;
     } catch (err) {
-      if (onNotify) {
-        onNotify.error?.(`Failed to load dashboard: ${err.message}`);
+      if (notifyRef.current) {
+        notifyRef.current.error?.(`Failed to load dashboard: ${err.message}`);
       }
     } finally {
       setLoading(false);
     }
-  }, [selectedModelId, onNotify]);
+  }, []);
 
-  // Initial load when user is authenticated
+  // Initial load when user is authenticated, or when model filter selection changes
   useEffect(() => {
     if (user) {
       loadDashboard(selectedModelId);

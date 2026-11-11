@@ -7,6 +7,7 @@ import {
   Activity,
   ChevronLeft,
   ChevronRight,
+  X,
 } from 'lucide-react';
 import { cn } from '../lib/utils.js';
 
@@ -16,6 +17,8 @@ export function AppSidebar({
   pendingCount = 0,
   systemStatus = 'HEALTHY',
   totalModels = 0,
+  isMobileNavOpen = false,
+  onCloseMobileNav,
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -50,25 +53,30 @@ export function AppSidebar({
     },
   ];
 
+  const showExpandedContent = !collapsed || isMobileNavOpen;
+
   return (
     <aside
-      className={cn('app-sidebar', collapsed && 'collapsed')}
+      id="app-sidebar"
+      className={cn('app-sidebar', collapsed && 'collapsed', isMobileNavOpen && 'mobile-open')}
       aria-label="Operations Navigation"
     >
       <div className="sidebar-header">
-        {!collapsed && (
+        {showExpandedContent && (
           <span className="sidebar-title">
             Operations Center
           </span>
         )}
         <button
           type="button"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={isMobileNavOpen ? onCloseMobileNav : () => setCollapsed(!collapsed)}
           className="sidebar-toggle-btn"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={isMobileNavOpen ? 'Close navigation' : (collapsed ? 'Expand sidebar' : 'Collapse sidebar')}
+          aria-label={isMobileNavOpen ? 'Close navigation' : (collapsed ? 'Expand sidebar' : 'Collapse sidebar')}
         >
-          {collapsed ? (
+          {isMobileNavOpen ? (
+            <X className="icon-sm" aria-hidden="true" />
+          ) : collapsed ? (
             <ChevronRight className="icon-sm" aria-hidden="true" />
           ) : (
             <ChevronLeft className="icon-sm" aria-hidden="true" />
@@ -84,14 +92,18 @@ export function AppSidebar({
             <button
               key={item.id}
               type="button"
-              onClick={() => onSelectView?.(item.id)}
+              onClick={() => {
+                onSelectView?.(item.id);
+                onCloseMobileNav?.();
+              }}
               className={cn('sidebar-nav-item', isActive && 'active')}
-              title={collapsed ? item.label : undefined}
+              title={!showExpandedContent ? item.label : undefined}
+              aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
             >
               <Icon className="icon-sm nav-icon" aria-hidden="true" />
-              {!collapsed && <span className="nav-label">{item.label}</span>}
-              {!collapsed && item.badge && (
+              {showExpandedContent && <span className="nav-label">{item.label}</span>}
+              {showExpandedContent && item.badge && (
                 <span
                   className={cn(
                     'nav-badge',
@@ -109,7 +121,7 @@ export function AppSidebar({
       </nav>
 
       {/* System Status Footer */}
-      {!collapsed && (
+      {showExpandedContent && (
         <div className="sidebar-footer">
           <div className="sidebar-footer-row">
             <span className="sidebar-footer-title">AIMD Engine</span>

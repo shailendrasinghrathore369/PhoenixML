@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Activity,
   TrendingUp,
-  Grid,
   AlertTriangle,
   ArrowRight,
   Database,
@@ -14,7 +13,6 @@ import {
   Layers,
   Info,
   X,
-  Play,
   AlertCircle,
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader.jsx';
@@ -476,11 +474,6 @@ export function TelemetryPage({
           icon={Activity}
           title="Model Telemetry & Performance Trends"
           subtitle="Historical time-series tracking of classification accuracy, precision, recall, F1 score, and observation traffic."
-          badge={
-            <StatusBadge variant="info" size="sm">
-              Phase 3B · Milestone 3
-            </StatusBadge>
-          }
         />
         <LoadingState message="Loading telemetry & observations..." />
       </div>
@@ -495,11 +488,6 @@ export function TelemetryPage({
           icon={Activity}
           title="Model Telemetry & Performance Trends"
           subtitle="Historical time-series tracking of classification accuracy, precision, recall, F1 score, and observation traffic."
-          badge={
-            <StatusBadge variant="info" size="sm">
-              Phase 3B · Milestone 3
-            </StatusBadge>
-          }
         />
         <LoadingState message="Loading registered models..." />
       </div>
@@ -514,11 +502,6 @@ export function TelemetryPage({
           icon={Activity}
           title="Model Telemetry & Performance Trends"
           subtitle="Historical time-series tracking of classification accuracy, precision, recall, F1 score, and observation traffic."
-          badge={
-            <StatusBadge variant="info" size="sm">
-              Phase 3B · Milestone 3
-            </StatusBadge>
-          }
         />
         <ErrorState
           title="Unable to Load Models"
@@ -537,11 +520,6 @@ export function TelemetryPage({
           icon={Activity}
           title="Model Telemetry & Performance Trends"
           subtitle="Historical time-series tracking of classification accuracy, precision, recall, F1 score, and observation traffic."
-          badge={
-            <StatusBadge variant="info" size="sm">
-              Phase 3B · Milestone 3
-            </StatusBadge>
-          }
         />
         <EmptyState
           icon={Cpu}
@@ -569,11 +547,6 @@ export function TelemetryPage({
         icon={Activity}
         title="Model Telemetry & Performance Trends"
         subtitle="Historical time-series tracking of classification accuracy, precision, recall, F1 score, and observation traffic."
-        badge={
-          <StatusBadge variant="info" size="sm">
-            Phase 3B · Milestone 3
-          </StatusBadge>
-        }
       />
 
       {/* Model Selector Bar */}
@@ -720,16 +693,20 @@ export function TelemetryPage({
       </div>
 
       {/* Observation Table / State Section */}
-      <section className="section">
-        {obsError ? (
+      {obsError ? (
+        <section className="section">
           <ErrorState
             title="Failed to Load Telemetry Observations"
             message={obsError}
             onRetry={handleRetry}
           />
-        ) : obsLoading && sortedObservations.length === 0 ? (
+        </section>
+      ) : obsLoading && sortedObservations.length === 0 ? (
+        <section className="section">
           <LoadingState message="Loading historical observations for selected model..." />
-        ) : sortedObservations.length === 0 ? (
+        </section>
+      ) : sortedObservations.length === 0 ? (
+        <section className="section">
           <EmptyState
             icon={Activity}
             title="No Historical Observations Recorded"
@@ -745,30 +722,33 @@ export function TelemetryPage({
               </button>
             }
           />
-        ) : (
-          <div>
-            {/* Native SVG Time-Series Chart Visualizer */}
+        </section>
+      ) : (
+        <>
+          {/* Native SVG Time-Series Chart Visualizer */}
+          <section className="section" aria-label="Performance Trajectory Chart">
             <TelemetryChart
               observations={observations}
               modelName={selectedModel?.name}
               loading={obsLoading}
             />
+          </section>
 
-            {/* Real Dataset Evaluation, Degradation Comparator & Confusion Matrix Section */}
-            <div
-              className="dataset-comparator-section"
-              data-testid="section-dataset-comparator"
-              style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
-            >
-              <div className="section-header">
-                <h2 className="section-title">
-                  <Layers className="icon-sm text-primary" aria-hidden="true" />
-                  <span>Dataset Evaluation & Degradation Comparator</span>
-                </h2>
-                <span className="section-meta">
-                  Reference (UCI) vs Shifted (Operational Proxy)
-                </span>
-              </div>
+          {/* Real Dataset Evaluation, Degradation Comparator & Confusion Matrix Section */}
+          <section
+            className="section dataset-comparator-section"
+            data-testid="section-dataset-comparator"
+            aria-label="Dataset Evaluation & Degradation Comparator"
+          >
+            <div className="section-header">
+              <h2 className="section-title">
+                <Layers className="icon-sm text-primary" aria-hidden="true" />
+                <span>Dataset Evaluation & Degradation Comparator</span>
+              </h2>
+              <span className="section-meta">
+                Reference (UCI) vs Shifted (Operational Proxy)
+              </span>
+            </div>
 
               <div
                 className="table-card"
@@ -1190,120 +1170,76 @@ export function TelemetryPage({
                   </div>
                 )}
               </div>
-            </div>
+            </section>
 
-            <div className="section-header" style={{ marginTop: '2rem' }}>
-              <h2 className="section-title">
-                <History className="icon-sm text-primary" aria-hidden="true" />
-                <span>Historical Observations Log</span>
-              </h2>
-              <span className="section-meta">
-                Sorted newest first · Page {Math.floor(skip / PAGE_SIZE) + 1}
-              </span>
-            </div>
+            {/* Historical Observations Log Section */}
+            <section className="section" aria-label="Historical Observations Log Section">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <History className="icon-sm text-primary" aria-hidden="true" />
+                  <span>Historical Observations Log</span>
+                </h2>
+                <span className="section-meta">
+                  Sorted newest first · Page {Math.floor(skip / PAGE_SIZE) + 1}
+                </span>
+              </div>
 
-            <div className="table-card">
-              <DataTable
-                columns={columns}
-                data={sortedObservations}
-                keyField="id"
-                emptyTitle="No Historical Observations"
-                emptyDescription="No observations have been recorded for this model yet."
-              />
-              <div
-                className="table-pagination"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.75rem 1.25rem',
-                  borderTop: '1px solid var(--border-color)',
-                  flexWrap: 'wrap',
-                  gap: '0.75rem',
-                }}
-              >
+              <div className="table-card">
+                <DataTable
+                  columns={columns}
+                  data={sortedObservations}
+                  keyField="id"
+                  emptyTitle="No Historical Observations"
+                  emptyDescription="No observations have been recorded for this model yet."
+                />
                 <div
-                  className="pagination-info"
-                  style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}
+                  className="table-pagination"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 1.25rem',
+                    borderTop: '1px solid var(--border-color)',
+                    flexWrap: 'wrap',
+                    gap: '0.75rem',
+                  }}
                 >
-                  {`Showing ${skip + 1} to ${skip + sortedObservations.length} observations · Page ${Math.floor(skip / PAGE_SIZE) + 1}`}
-                </div>
-                <div
-                  className="pagination-actions"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm"
-                    disabled={skip === 0 || obsLoading}
-                    onClick={handlePrevPage}
-                    aria-label="Previous page"
+                  <div
+                    className="pagination-info"
+                    style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}
                   >
-                    <ChevronLeft className="icon-xs" aria-hidden="true" />
-                    <span>Previous</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm"
-                    disabled={sortedObservations.length < PAGE_SIZE || obsLoading}
-                    onClick={handleNextPage}
-                    aria-label="Next page"
+                    {`Showing ${skip + 1} to ${skip + sortedObservations.length} observations · Page ${Math.floor(skip / PAGE_SIZE) + 1}`}
+                  </div>
+                  <div
+                    className="pagination-actions"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                   >
-                    <span>Next</span>
-                    <ChevronRight className="icon-xs" aria-hidden="true" />
-                  </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      disabled={skip === 0 || obsLoading}
+                      onClick={handlePrevPage}
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeft className="icon-xs" aria-hidden="true" />
+                      <span>Previous</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      disabled={sortedObservations.length < PAGE_SIZE || obsLoading}
+                      onClick={handleNextPage}
+                      aria-label="Next page"
+                    >
+                      <span>Next</span>
+                      <ChevronRight className="icon-xs" aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </section>
+          </>
         )}
-      </section>
-
-      {/* Milestone 3 Roadmap & Capabilities */}
-      <section className="section">
-        <div className="section-header">
-          <h2 className="section-title">
-            <TrendingUp className="icon-sm text-primary" aria-hidden="true" />
-            <span>Telemetry & Visualization Roadmap (Milestone 3)</span>
-          </h2>
-          <span className="section-meta">Native SVG Visualizations</span>
-        </div>
-
-        <div className="roadmap-grid">
-          <div className="roadmap-card">
-            <div className="roadmap-card-header">
-              <TrendingUp className="icon-sm text-primary" aria-hidden="true" />
-              <h3 className="roadmap-card-title">Time-Series Performance Charts</h3>
-            </div>
-            <p className="roadmap-card-desc">
-              Interactive multi-metric charts plotting historical F1, accuracy, precision, and recall across observations. Rendered using dependency-free React SVG with theme-reactive tokens.
-            </p>
-            <span className="roadmap-badge">GET /api/spam-models/{'{id}'}/monitoring</span>
-          </div>
-
-          <div className="roadmap-card">
-            <div className="roadmap-card-header">
-              <Grid className="icon-sm text-primary" aria-hidden="true" />
-              <h3 className="roadmap-card-title">2x2 Confusion Matrix Heatmap</h3>
-            </div>
-            <p className="roadmap-card-desc">
-              Visual confusion matrix displaying True Positives, False Positives, True Negatives, and False Negatives calculated from real holdout test set evaluations.
-            </p>
-            <span className="roadmap-badge">POST /api/spam-models/{'{id}'}/evaluate-telemetry</span>
-          </div>
-
-          <div className="roadmap-card">
-            <div className="roadmap-card-header">
-              <AlertTriangle className="icon-sm text-primary" aria-hidden="true" />
-              <h3 className="roadmap-card-title">Degradation Delta Comparator</h3>
-            </div>
-            <p className="roadmap-card-desc">
-              Side-by-side comparator showing metric drops when evaluating shifted operational data against deterministic UCI reference benchmarks.
-            </p>
-            <span className="roadmap-badge">Shifted Distribution Delta</span>
-          </div>
-        </div>
-      </section>
 
       {/* Confirmation Dialog for Triggering Real Dataset Evaluations */}
       <ConfirmationDialog

@@ -49,6 +49,7 @@ function ModelFormModal({
   });
   const [errors, setErrors] = useState({});
   const dialogRef = useRef(null);
+  const previouslyFocusedElement = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -70,18 +71,64 @@ function ModelFormModal({
     initialData?.status,
   ]);
 
-  // Focus trap and escape key handler
+  // Focus trap, initial focus, escape key handler, and focus return
   useEffect(() => {
     if (!isOpen) return;
+
+    // Save invoking element to restore focus on close
+    previouslyFocusedElement.current = document.activeElement;
+
+    // Focus first interactive control after modal mounts
+    const timer = setTimeout(() => {
+      if (!dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length > 0) {
+        focusable[0].focus();
+      } else {
+        dialogRef.current.focus();
+      }
+    }, 0);
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && !loading) {
         e.preventDefault();
         onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const firstElement = focusable[0];
+        const lastElement = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      if (previouslyFocusedElement.current && typeof previouslyFocusedElement.current.focus === 'function') {
+        previouslyFocusedElement.current.focus();
+      }
+    };
   }, [isOpen, loading, onClose]);
 
   if (!isOpen) return null;
@@ -528,11 +575,7 @@ export function ModelRegistryPage({
             <StatusBadge variant="viewer" size="sm">
               Viewer (Read-Only)
             </StatusBadge>
-          ) : (
-            <StatusBadge variant="info" size="sm">
-              Phase 3B · Milestone 2
-            </StatusBadge>
-          )
+          ) : null
         }
         actions={
           canCreate ? (

@@ -160,7 +160,6 @@ export function SignupPage({
                 onClick={() => setShowPassword(!showPassword)}
                 title={showPassword ? 'Hide password' : 'Show password'}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="icon-sm" /> : <Eye className="icon-sm" />}
               </button>
@@ -192,7 +191,6 @@ export function SignupPage({
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 title={showConfirmPassword ? 'Hide password' : 'Show password'}
                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                tabIndex={-1}
               >
                 {showConfirmPassword ? <EyeOff className="icon-sm" /> : <Eye className="icon-sm" />}
               </button>

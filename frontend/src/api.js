@@ -3,8 +3,10 @@
  * Centralizes REST communication with the FastAPI backend.
  */
 
-const API_BASE_URL = window.location.origin.includes(':3000') || window.location.origin.includes(':5173')
-  ? 'http://localhost:8000/api'
+const API_PORT = '8000';
+const isDevPort = typeof window !== 'undefined' && window.location && (window.location.origin.includes(':3000') || window.location.origin.includes(':5173'));
+const API_BASE_URL = isDevPort
+  ? `http://${(window.location && window.location.hostname) || 'localhost'}:${API_PORT}/api`
   : '/api';
 
 const TOKEN_KEY = 'phoenixml_access_token';

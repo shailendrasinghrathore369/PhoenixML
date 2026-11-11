@@ -1,15 +1,36 @@
 import React from 'react';
-import { Shield, RefreshCw, LogOut, User as UserIcon } from 'lucide-react';
+import { Shield, RefreshCw, LogOut, User as UserIcon, Menu, X } from 'lucide-react';
 import { StatusBadge } from './StatusBadge.jsx';
 import { ThemeToggle } from './ThemeToggle.jsx';
 import { cn } from '../lib/utils.js';
 
-export function AppHeader({ user, onLogout, onRefresh, loading }) {
+export function AppHeader({
+  user,
+  onLogout,
+  onRefresh,
+  loading,
+  isMobileNavOpen = false,
+  onToggleMobileNav,
+}) {
   const role = user?.role || 'VIEWER';
 
   return (
     <header className="app-header navbar">
       <div className="header-brand-wrap">
+        <button
+          type="button"
+          onClick={onToggleMobileNav}
+          className="mobile-nav-toggle"
+          aria-label={isMobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={isMobileNavOpen}
+          aria-controls="app-sidebar"
+        >
+          {isMobileNavOpen ? (
+            <X className="icon-sm" aria-hidden="true" />
+          ) : (
+            <Menu className="icon-sm" aria-hidden="true" />
+          )}
+        </button>
         <div className="header-brand-icon" aria-hidden="true">
           <Shield className="icon-md" />
         </div>

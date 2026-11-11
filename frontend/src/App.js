@@ -29,7 +29,7 @@ try {
 
 // React hooks and createElement reference
 const ReactRef = window.React || {};
-const { useState, useEffect, useCallback, useMemo } = ReactRef;
+const { useState, useEffect, useCallback, useMemo, useRef } = ReactRef;
 const h = ReactRef.createElement;
 
 // Date formatter
@@ -892,20 +892,27 @@ export function App() {
     return () => window.removeEventListener('phoenixml-unauthorized', handleUnauthorized);
   }, []);
 
-  // Fetch dashboard overview
-  const loadDashboard = useCallback(async (modelId = selectedModelId) => {
+  const selectedModelIdRef = useRef ? useRef(selectedModelId) : { current: selectedModelId };
+  useEffect(() => {
+    if (selectedModelIdRef) selectedModelIdRef.current = selectedModelId;
+  }, [selectedModelId]);
+
+  // Fetch dashboard overview with stable callback reference
+  const loadDashboard = useCallback(async (modelId) => {
+    const targetId = modelId !== undefined ? modelId : (selectedModelIdRef ? selectedModelIdRef.current : selectedModelId);
     setLoading(true);
     try {
-      const data = await api.getDashboardOverview(modelId || null);
+      const data = await api.getDashboardOverview(targetId || null);
       setDashboardData(data);
+      return data;
     } catch (err) {
       setAlert({ type: 'error', message: `Failed to load dashboard: ${err.message}` });
     } finally {
       setLoading(false);
     }
-  }, [selectedModelId]);
+  }, []);
 
-  // Initial load when user is present
+  // Initial load when user is present, or when model filter selection changes
   useEffect(() => {
     if (user) {
       loadDashboard(selectedModelId);

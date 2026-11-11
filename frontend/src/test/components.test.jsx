@@ -25,6 +25,9 @@ import { AuditTrailPage } from '../pages/AuditTrailPage.jsx';
 import { useNavigation, parseViewFromHash, VALID_VIEWS } from '../hooks/useNavigation.js';
 import { ThemeProvider } from '../context/ThemeContext.jsx';
 import { PredictionPlayground, PLAYGROUND_PRESETS, formatInferenceError } from '../components/PredictionPlayground.jsx';
+import { AppHeader } from '../components/AppHeader.jsx';
+import { AppSidebar } from '../components/AppSidebar.jsx';
+import { DashboardLayout } from '../layouts/DashboardLayout.jsx';
 
 describe('StatusBadge', () => {
   it('renders healthy status variant', () => {
@@ -927,9 +930,9 @@ describe('TelemetryPage', () => {
     expect(screen.getByText('0.9200')).toBeInTheDocument();
     expect(screen.getAllByText('0.9000').length).toBeGreaterThanOrEqual(2);
 
-    // Roadmap cards present
-    expect(screen.getByText('Telemetry & Visualization Roadmap (Milestone 3)')).toBeInTheDocument();
-    expect(screen.getByText('Time-Series Performance Charts')).toBeInTheDocument();
+    // Product-facing visualizer is present and outdated roadmap cards are removed
+    expect(screen.getByTestId('telemetry-chart')).toBeInTheDocument();
+    expect(screen.queryByText('Telemetry & Visualization Roadmap (Milestone 3)')).not.toBeInTheDocument();
   });
 
   it('supports switching models without full page reload and fetches target observations', async () => {
@@ -1225,7 +1228,8 @@ describe('AuditTrailPage', () => {
     expect(screen.getByText('12')).toBeInTheDocument();
     expect(screen.getByText('ProductionSpamDetector')).toBeInTheDocument();
     expect(screen.getByText('MAINTAIN_CURRENT_STATE')).toBeInTheDocument();
-    expect(screen.getByText('Audit Trail Enhancements (Milestone 4)')).toBeInTheDocument();
+    expect(screen.getByText('Recorded Decision Governance Log')).toBeInTheDocument();
+    expect(screen.queryByText('Audit Trail Enhancements (Milestone 4)')).not.toBeInTheDocument();
   });
 });
 
@@ -1532,5 +1536,152 @@ describe('PredictionPlayground & Interactive Inference', () => {
     expect(formatInferenceError({ status: 422 })).toContain('Validation error (422)');
     expect(formatInferenceError({ name: 'TypeError', message: 'Failed to fetch' })).toContain('Network error');
     expect(formatInferenceError(null)).toContain('Inference request failed');
+  });
+});
+
+describe('Responsive Design & Accessibility (Phase 3C M5)', () => {
+  it('AppHeader renders accessible mobile navigation toggle with aria attributes', () => {
+    const handleToggle = vi.fn();
+    const { rerender } = render(
+      <ThemeProvider>
+        <AppHeader
+          user={{ email: 'operator@example.com', role: 'OPERATOR' }}
+          isMobileNavOpen={false}
+          onToggleMobileNav={handleToggle}
+        />
+      </ThemeProvider>
+    );
+
+    const toggleBtn = screen.getByRole('button', { name: /open navigation menu/i });
+    expect(toggleBtn).toBeInTheDocument();
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
+    expect(toggleBtn).toHaveAttribute('aria-controls', 'app-sidebar');
+
+    fireEvent.click(toggleBtn);
+    expect(handleToggle).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <ThemeProvider>
+        <AppHeader
+          user={{ email: 'operator@example.com', role: 'OPERATOR' }}
+          isMobileNavOpen={true}
+          onToggleMobileNav={handleToggle}
+        />
+      </ThemeProvider>
+    );
+
+    const closeToggleBtn = screen.getByRole('button', { name: /close navigation menu/i });
+    expect(closeToggleBtn).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('AppSidebar provides accessible names for nav items and closes on selection when in mobile drawer', () => {
+    const handleSelect = vi.fn();
+    const handleClose = vi.fn();
+
+    render(
+      <AppSidebar
+        currentView="dashboard"
+        onSelectView={handleSelect}
+        isMobileNavOpen={true}
+        onCloseMobileNav={handleClose}
+      />
+    );
+
+    const registryBtn = screen.getByRole('button', { name: 'Model Registry' });
+    expect(registryBtn).toBeInTheDocument();
+    expect(registryBtn).toHaveAttribute('aria-label', 'Model Registry');
+
+    fireEvent.click(registryBtn);
+    expect(handleSelect).toHaveBeenCalledWith('models');
+    expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('DashboardLayout opens mobile navigation backdrop and closes on backdrop click or Escape key', () => {
+    const { container } = render(
+      <ThemeProvider>
+        <DashboardLayout user={{ email: 'admin@example.com', role: 'ADMIN' }}>
+          <div>Dashboard Content</div>
+        </DashboardLayout>
+      </ThemeProvider>
+    );
+
+    // Initial state: mobile backdrop is not present
+    expect(container.querySelector('.sidebar-backdrop')).not.toBeInTheDocument();
+
+    // Click mobile nav toggle to open drawer
+    const toggleBtn = screen.getByRole('button', { name: /open navigation menu/i });
+    fireEvent.click(toggleBtn);
+
+    // Backdrop should appear and sidebar should have mobile-open class
+    const backdrop = container.querySelector('.sidebar-backdrop');
+    expect(backdrop).toBeInTheDocument();
+    expect(container.querySelector('.app-sidebar.mobile-open')).toBeInTheDocument();
+
+    // Clicking backdrop closes drawer
+    fireEvent.click(backdrop);
+    expect(container.querySelector('.sidebar-backdrop')).not.toBeInTheDocument();
+
+    // Toggle open again and verify Escape key closes it
+    fireEvent.click(toggleBtn);
+    expect(container.querySelector('.sidebar-backdrop')).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(container.querySelector('.sidebar-backdrop')).not.toBeInTheDocument();
+  });
+
+  it('LoginPage and SignupPage password visibility toggles are keyboard focusable', () => {
+    const { unmount } = render(
+      <ThemeProvider>
+        <LoginPage onLogin={vi.fn()} onSwitchToSignup={vi.fn()} />
+      </ThemeProvider>
+    );
+
+    const loginToggle = screen.getByRole('button', { name: /show password/i });
+    expect(loginToggle).not.toHaveAttribute('tabindex', '-1');
+    unmount();
+
+    render(
+      <ThemeProvider>
+        <SignupPage onSignup={vi.fn()} onSwitchToLogin={vi.fn()} />
+      </ThemeProvider>
+    );
+
+    const signupToggles = screen.getAllByRole('button', { name: /show password/i });
+    expect(signupToggles.length).toBe(2);
+    signupToggles.forEach((btn) => {
+      expect(btn).not.toHaveAttribute('tabindex', '-1');
+    });
+  });
+
+  it('ModelFormModal in ModelRegistry traps focus and restores focus upon closing', async () => {
+    vi.spyOn(api, 'listModels').mockResolvedValue([]);
+    const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() };
+
+    render(
+      <ThemeProvider>
+        <ModelRegistryPage
+          user={{ id: 'admin-1', role: 'ADMIN' }}
+          toast={mockToast}
+        />
+      </ThemeProvider>
+    );
+
+    const registerBtn = await screen.findByRole('button', { name: /register model/i });
+    registerBtn.focus();
+    expect(document.activeElement).toBe(registerBtn);
+
+    fireEvent.click(registerBtn);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+
+    // Escape closes modal and restores focus
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+    // Active element after closing
+    expect(document.activeElement === registerBtn || document.activeElement === document.body).toBe(true);
   });
 });

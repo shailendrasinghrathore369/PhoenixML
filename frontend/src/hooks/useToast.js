@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 let toastIdCounter = 0;
 
@@ -10,18 +10,25 @@ export function useToast() {
   }, []);
 
   const addToast = useCallback(({ type = 'info', title = null, message, duration = 6000 }) => {
-    const id = ++toastIdCounter;
-    const newToast = { id, type, title, message, duration, createdAt: Date.now() };
+    let newId = null;
 
-    setToasts((prev) => [...prev, newToast]);
+    setToasts((prev) => {
+      // Prevent duplicate error or warning notifications with the same message
+      if ((type === 'error' || type === 'warning') && prev.some((t) => t.type === type && t.message === message)) {
+        return prev;
+      }
+      newId = ++toastIdCounter;
+      return [...prev, { id: newId, type, title, message, duration, createdAt: Date.now() }];
+    });
 
-    if (duration > 0) {
+    if (duration > 0 && newId) {
+      const scheduledId = newId;
       setTimeout(() => {
-        dismissToast(id);
+        dismissToast(scheduledId);
       }, duration);
     }
 
-    return id;
+    return newId;
   }, [dismissToast]);
 
   const success = useCallback((message, title = 'Success') => {
@@ -40,7 +47,7 @@ export function useToast() {
     return addToast({ type: 'info', title, message });
   }, [addToast]);
 
-  return {
+  return useMemo(() => ({
     toasts,
     addToast,
     dismissToast,
@@ -48,5 +55,5 @@ export function useToast() {
     error,
     warning,
     info,
-  };
+  }), [toasts, addToast, dismissToast, success, error, warning, info]);
 }
